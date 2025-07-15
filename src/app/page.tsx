@@ -4,7 +4,6 @@ import { useState, useContext } from "react";
 import { useRouter } from "next/navigation";
 import * as mammoth from "mammoth";
 import { FlashcardContext } from "./context/FlashcardContext";
-import Loading from "./components/Loading";
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
