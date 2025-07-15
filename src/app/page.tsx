@@ -8,7 +8,8 @@ import { FlashcardContext } from "./context/FlashcardContext";
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
   const [flag, setFlag] = useState("Answer:");
-  const [dragged, setDragged] = useState<DragEvent | null>(null);
+  const [dragged, setDragged] =
+    useState<React.DragEvent<HTMLDivElement> | null>(null);
   const context = useContext(FlashcardContext);
   const router = useRouter();
 
