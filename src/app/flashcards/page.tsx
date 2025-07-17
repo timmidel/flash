@@ -32,22 +32,24 @@ export default function FlashcardsPage() {
   const setFlashcards = context ? context.setFlashcards : () => {};
   const handleNext = () => {
     setIsFading(true);
+    const duration = isFlipped ? 250 : 150;
     setTimeout(() => {
       setCurrentIndex((prevIndex) => (prevIndex + 1) % flashcards.length);
       setIsFlipped(false);
       setIsFading(false);
-    }, 200); // Adjust duration as needed
+    }, duration);
   };
 
   const handlePrev = () => {
     setIsFading(true);
+    const duration = isFlipped ? 250 : 150;
     setTimeout(() => {
       setCurrentIndex((prevIndex) =>
         prevIndex === 0 ? flashcards.length - 1 : prevIndex - 1
       );
       setIsFlipped(false);
       setIsFading(false);
-    }, 300); // Adjust duration as needed
+    }, duration);
   };
 
   const handleShuffle = () => {

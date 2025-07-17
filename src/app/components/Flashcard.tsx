@@ -33,7 +33,7 @@ export default function FlashcardComponent({
       {measureContent(flashcard.answer)}
 
       <div
-        className={`relative transition-transform duration-200 transform-style-preserve-3d ${
+        className={`relative transition-transform duration-100 transform-style-preserve-3d ${
           isFlipped ? "rotate-y-180" : ""
         }`}
       >
