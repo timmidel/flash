@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useContext, useRef } from "react";
+import toast, { Toaster } from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import * as mammoth from "mammoth";
 import { FlashcardContext } from "./context/FlashcardContext";
@@ -22,6 +23,22 @@ export default function Home() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
+      if (e.target.files.length === 0) {
+        toast.error("Please select a file.");
+        return;
+      }
+      if (e.target.files[0].size > 10 * 1024 * 1024) {
+        toast.error("File size exceeds 10MB limit.");
+        return;
+      }
+      if (
+        e.target.files[0].type !==
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      ) {
+        toast.error("Please upload a valid DOCX file.");
+        return;
+      }
+      setDragged(null);
       setFile(e.target.files[0]);
     }
   };
@@ -32,7 +49,7 @@ export default function Home() {
 
   const generateFlashcards = async () => {
     if (!file) {
-      alert("Please upload a Word document.");
+      toast.error("Please upload a Word document.");
       return;
     }
 
@@ -171,6 +188,7 @@ export default function Home() {
           </div>
         </div>
       </div>
+      <Toaster position="top-right" />
     </div>
   );
 }
