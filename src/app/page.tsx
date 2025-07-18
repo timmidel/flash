@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useContext, useRef } from "react";
+import { useState, useContext, useRef, useEffect } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import * as mammoth from "mammoth";
 import { FlashcardContext } from "./context/FlashcardContext";
+import { supabase } from "./lib/supabaseClient";
+import { User } from "@supabase/supabase-js";
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
@@ -14,6 +16,38 @@ export default function Home() {
   const context = useContext(FlashcardContext);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const router = useRouter();
+  const [user, setUser] = useState<User | null | undefined>(undefined); // Add 'undefined' for loading state
+
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    // Optional: do an initial check right away
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user ?? null);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (user === null) {
+      router.push("/login");
+    }
+  }, [user, router]);
+
+  if (user === undefined) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-900">
+        <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-purple-500"></div>
+      </div>
+    );
+  }
 
   if (!context) {
     return null;
@@ -105,90 +139,105 @@ export default function Home() {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-extrabold text-center text-purple-400">
-          Flashcard Generator
-        </h1>
-        <div className="mt-8 space-y-6">
-          <div
-            className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md transition-all cursor-pointer ${
-              dragged ? "border-purple-500" : "border-gray-600"
-            } hover:border-purple-500`}
-            onClick={() => fileInputRef.current?.click()}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-          >
-            <input
-              ref={fileInputRef}
-              id="file-upload"
-              name="file-upload"
-              type="file"
-              className="hidden"
-              onChange={handleFileChange}
-              accept=".docx"
-            />
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push("/login");
+  };
 
-            <div className="space-y-1 text-center">
-              <svg
-                className="mx-auto h-12 w-12 text-gray-500"
-                stroke="currentColor"
-                fill="none"
-                viewBox="0 0 48 48"
-                aria-hidden="true"
-              >
-                <path
-                  d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8"
-                  strokeWidth={2}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              <div className="flex text-sm text-gray-400 justify-center">
-                <span className="font-medium text-purple-400">
-                  Upload a file
-                </span>
-                <p className="pl-1">or drag and drop</p>
-              </div>
-              <p className="text-xs text-gray-500 mb-3">DOCX up to 10MB</p>
-              {file && (
-                <p className="text-sm text-gray-300 font-semibold">
-                  {file.name}
-                </p>
-              )}
-            </div>
-          </div>
-          <div>
-            <label
-              htmlFor="flag"
-              className="block text-sm font-medium text-gray-300"
-            >
-              Answer Flag
-            </label>
-            <div className="mt-1">
-              <input
-                id="flag"
-                name="flag"
-                type="text"
-                value={flag}
-                onChange={handleFlagChange}
-                className="appearance-none block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
-              />
-            </div>
-          </div>
-          <div>
+  return (
+    user && (
+      <div className="min-h-screen bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto">
+          <div className="flex justify-between items-center mb-8">
+            <h1 className="text-3xl font-extrabold text-purple-400">
+              Flashcard Generator
+            </h1>
             <button
-              onClick={generateFlashcards}
-              className="w-full flex justify-center cursor-pointer py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+              onClick={handleLogout}
+              className="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
             >
-              Generate Flashcards
+              Logout
             </button>
           </div>
+          <div className="mt-8 space-y-6">
+            <div
+              className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md transition-all cursor-pointer ${
+                dragged ? "border-purple-500" : "border-gray-600"
+              } hover:border-purple-500`}
+              onClick={() => fileInputRef.current?.click()}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+              <input
+                ref={fileInputRef}
+                id="file-upload"
+                name="file-upload"
+                type="file"
+                className="hidden"
+                onChange={handleFileChange}
+                accept=".docx"
+              />
+
+              <div className="space-y-1 text-center">
+                <svg
+                  className="mx-auto h-12 w-12 text-gray-500"
+                  stroke="currentColor"
+                  fill="none"
+                  viewBox="0 0 48 48"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                <div className="flex text-sm text-gray-400 justify-center">
+                  <span className="font-medium text-purple-400">
+                    Upload a file
+                  </span>
+                  <p className="pl-1">or drag and drop</p>
+                </div>
+                <p className="text-xs text-gray-500 mb-3">DOCX up to 10MB</p>
+                {file && (
+                  <p className="text-sm text-gray-300 font-semibold">
+                    {file.name}
+                  </p>
+                )}
+              </div>
+            </div>
+            <div>
+              <label
+                htmlFor="flag"
+                className="block text-sm font-medium text-gray-300"
+              >
+                Answer Flag
+              </label>
+              <div className="mt-1">
+                <input
+                  id="flag"
+                  name="flag"
+                  type="text"
+                  value={flag}
+                  onChange={handleFlagChange}
+                  className="appearance-none block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                />
+              </div>
+            </div>
+            <div>
+              <button
+                onClick={generateFlashcards}
+                className="w-full flex justify-center cursor-pointer py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+              >
+                Generate Flashcards
+              </button>
+            </div>
+          </div>
         </div>
+        <Toaster position="top-right" />
       </div>
-      <Toaster position="top-right" />
-    </div>
+    )
   );
 }
