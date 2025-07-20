@@ -7,6 +7,19 @@ import * as mammoth from "mammoth";
 import { FlashcardContext } from "./context/FlashcardContext";
 import { supabase } from "./lib/supabaseClient";
 import { User } from "@supabase/supabase-js";
+import {
+  createDocument,
+  getDocumentsByUser,
+  deleteDocument,
+} from "./services/documentService";
+import { Trash2 } from "lucide-react";
+import DeleteConfirmationModal from "./components/DeleteConfirmationModal"; // Import the modal component
+
+type Document = {
+  id: string;
+  title: string;
+  content: string;
+};
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
@@ -17,6 +30,9 @@ export default function Home() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const router = useRouter();
   const [user, setUser] = useState<User | null | undefined>(undefined); // Add 'undefined' for loading state
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     const {
@@ -36,10 +52,51 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    if (user) {
+      fetchDocuments();
+    }
+  }, [user]);
+
+  useEffect(() => {
     if (user === null) {
       router.push("/login");
     }
   }, [user, router]);
+
+  const fetchDocuments = async () => {
+    if (!user) return;
+    try {
+      const userDocuments = await getDocumentsByUser(user.id);
+      setDocuments(userDocuments || []);
+    } catch (error) {
+      console.log("Error fetching documents:", error);
+      toast.error("Failed to fetch documents.");
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (documentToDelete) {
+      try {
+        await deleteDocument(documentToDelete);
+        fetchDocuments(); // Refresh the document list
+        toast.success("Document deleted successfully.");
+      } catch (error) {
+        toast.error("Failed to delete document.");
+        console.error("Delete error:", error);
+      }
+      closeModal();
+    }
+  };
+
+  const openModal = (docId: string) => {
+    setDocumentToDelete(docId);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setDocumentToDelete(null);
+  };
 
   if (user === undefined) {
     return (
@@ -81,6 +138,45 @@ export default function Home() {
     setFlag(e.target.value);
   };
 
+  const buildFlashcards = (text: string) => {
+    const lines = text.split("\n");
+    const newFlashcards: { question: string; answer: string }[] = [];
+    let currentQuestion = "";
+
+    for (const line of lines) {
+      if (line.includes(flag)) {
+        const parts = line.split(flag);
+        const question = currentQuestion.trim();
+        const answer = parts[1].trim();
+        if (question) {
+          newFlashcards.push({ question, answer });
+        }
+        currentQuestion = "";
+      } else {
+        currentQuestion += line + "\n";
+      }
+    }
+
+    setFlashcards(newFlashcards);
+  };
+
+  const saveDocument = async (content: string) => {
+    try {
+      const newDoc = await createDocument({
+        title: file?.name || "Untitled Document",
+        content,
+        folder_id: null,
+        user_id: user?.id,
+      });
+      console.log("Created:", newDoc);
+      if (newDoc) {
+        router.push("/flashcards");
+      }
+    } catch (error) {
+      toast.error("Failed to save document." + error);
+    }
+  };
+
   const generateFlashcards = async () => {
     if (!file) {
       toast.error("Please upload a Word document.");
@@ -93,26 +189,8 @@ export default function Home() {
         const arrayBuffer = e.target.result as ArrayBuffer;
         const result = await mammoth.extractRawText({ arrayBuffer });
         const text = result.value;
-        const lines = text.split("\n");
-        const newFlashcards: { question: string; answer: string }[] = [];
-        let currentQuestion = "";
-
-        for (const line of lines) {
-          if (line.includes(flag)) {
-            const parts = line.split(flag);
-            const question = currentQuestion.trim();
-            const answer = parts[1].trim();
-            if (question) {
-              newFlashcards.push({ question, answer });
-            }
-            currentQuestion = "";
-          } else {
-            currentQuestion += line + "\n";
-          }
-        }
-
-        setFlashcards(newFlashcards);
-        router.push("/flashcards");
+        buildFlashcards(text);
+        saveDocument(text);
       }
     };
     reader.readAsArrayBuffer(file);
@@ -142,6 +220,11 @@ export default function Home() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push("/login");
+  };
+
+  const handleDocumentClick = (content: string) => {
+    buildFlashcards(content);
+    router.push("/flashcards");
   };
 
   return (
@@ -235,8 +318,37 @@ export default function Home() {
               </button>
             </div>
           </div>
+          <div className="mt-12">
+            <h2 className="text-2xl font-extrabold text-purple-400 mb-4">
+              Your Documents
+            </h2>
+            <ul className="space-y-4">
+              {documents.map((doc) => (
+                <li
+                  key={doc.id}
+                  onClick={() => handleDocumentClick(doc.content)}
+                  className="bg-gray-800 p-4 rounded-lg cursor-pointer flex justify-between items-center transition-transform duration-200 hover:scale-101 hover:bg-gray-700"
+                >
+                  <div>
+                    <p className="text-white font-semibold">{doc.title}</p>
+                  </div>
+                  <button
+                    onClick={() => openModal(doc.id)}
+                    className="text-red-500 hover:text-red-700 cursor-pointer"
+                  >
+                    <Trash2 />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
         <Toaster position="top-right" />
+        <DeleteConfirmationModal
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          onConfirm={confirmDelete}
+        />
       </div>
     )
   );
