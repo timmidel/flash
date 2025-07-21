@@ -5,6 +5,9 @@ import { createContext, useState, ReactNode } from 'react';
 export interface Flashcard {
   question: string;
   answer: string;
+  choices?: { letter: string; text: string }[];
+  selectedAnswer?: string | null;
+  isRevealed?: boolean;
 }
 
 interface FlashcardContextType {

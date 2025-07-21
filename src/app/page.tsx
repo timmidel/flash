@@ -4,7 +4,7 @@ import { useState, useContext, useRef, useEffect } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import * as mammoth from "mammoth";
-import { FlashcardContext } from "./context/FlashcardContext";
+import { Flashcard, FlashcardContext } from "./context/FlashcardContext";
 import { supabase } from "./lib/supabaseClient";
 import { User } from "@supabase/supabase-js";
 import {
@@ -26,6 +26,7 @@ export default function Home() {
   const [flag, setFlag] = useState("Answer:");
   const [dragged, setDragged] =
     useState<React.DragEvent<HTMLDivElement> | null>(null);
+  const [quizType, setQuizType] = useState("classic");
   const context = useContext(FlashcardContext);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const router = useRouter();
@@ -160,6 +161,31 @@ export default function Home() {
     setFlashcards(newFlashcards);
   };
 
+  const buildMultipleChoice = (text: string) => {
+    const lines = text.split("\n");
+    const newFlashcards: Flashcard[] = [];
+    let currentQuestion = "";
+    let choices: { letter: string; text: string }[] = [];
+
+    for (const line of lines) {
+      if (line.match(/^[A-Z]\./)) {
+        const letter = line.charAt(0);
+        const choiceText = line.substring(2).trim();
+        choices.push({ letter, text: choiceText });
+      } else if (line.includes(flag)) {
+        const answer = line.split(flag)[1].trim().replace(".", "");
+        if (currentQuestion && choices.length > 0) {
+          newFlashcards.push({ question: currentQuestion, choices, answer });
+        }
+        currentQuestion = "";
+        choices = [];
+      } else if (line.trim()) {
+        currentQuestion += line + "\n";
+      }
+    }
+    setFlashcards(newFlashcards);
+  };
+
   const saveDocument = async (content: string) => {
     try {
       const newDoc = await createDocument({
@@ -170,7 +196,11 @@ export default function Home() {
       });
       console.log("Created:", newDoc);
       if (newDoc) {
-        router.push("/flashcards");
+        if (quizType === "classic") {
+          router.push("/flashcards");
+        } else {
+          router.push("/multiple-choice");
+        }
       }
     } catch (error) {
       toast.error("Failed to save document." + error);
@@ -189,7 +219,11 @@ export default function Home() {
         const arrayBuffer = e.target.result as ArrayBuffer;
         const result = await mammoth.extractRawText({ arrayBuffer });
         const text = result.value;
-        buildFlashcards(text);
+        if (quizType === "classic") {
+          buildFlashcards(text);
+        } else {
+          buildMultipleChoice(text);
+        }
         saveDocument(text);
       }
     };
@@ -223,8 +257,13 @@ export default function Home() {
   };
 
   const handleDocumentClick = (content: string) => {
-    buildFlashcards(content);
-    router.push("/flashcards");
+    if (quizType === "classic") {
+      buildFlashcards(content);
+      router.push("/flashcards");
+    } else {
+      buildMultipleChoice(content);
+      router.push("/multiple-choice");
+    }
   };
 
   return (
@@ -310,11 +349,31 @@ export default function Home() {
               </div>
             </div>
             <div>
+              <label
+                htmlFor="quiz-type"
+                className="block text-sm font-medium text-gray-300 mt-4"
+              >
+                Quiz Type
+              </label>
+              <div className="mt-1">
+                <select
+                  id="quiz-type"
+                  name="quiz-type"
+                  value={quizType}
+                  onChange={(e) => setQuizType(e.target.value)}
+                  className="appearance-none block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                >
+                  <option value="classic">Classic Flashcards</option>
+                  <option value="multiple-choice">Multiple Choice</option>
+                </select>
+              </div>
+            </div>
+            <div>
               <button
                 onClick={generateFlashcards}
-                className="w-full flex justify-center cursor-pointer py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                className="w-full flex justify-center cursor-pointer py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 mt-4"
               >
-                Generate Flashcards
+                Generate
               </button>
             </div>
           </div>
@@ -333,10 +392,13 @@ export default function Home() {
                     <p className="text-white font-semibold">{doc.title}</p>
                   </div>
                   <button
-                    onClick={() => openModal(doc.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openModal(doc.id);
+                    }}
                     className="text-red-500 hover:text-red-700 cursor-pointer"
                   >
-                    <Trash2 />
+                    <Trash2 className="z-10" />
                   </button>
                 </li>
               ))}
