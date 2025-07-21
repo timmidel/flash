@@ -1,15 +1,53 @@
 "use client";
 
 import { useContext, useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { Shuffle } from "lucide-react";
-import { FlashcardContext } from "../context/FlashcardContext";
+import { FlashcardContext, Flashcard } from "../context/FlashcardContext";
 import FlashcardComponent from "../components/Flashcard";
+import { getDocumentById } from "../services/documentService";
 
 export default function FlashcardsPage() {
   const context = useContext(FlashcardContext);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [isFading, setIsFading] = useState(false);
+  const searchParams = useSearchParams();
+  const docId = searchParams.get("docId");
+  const flag = searchParams.get("flag");
+
+  useEffect(() => {
+    const fetchAndBuildFlashcards = async () => {
+      if (docId && flag && context) {
+        try {
+          const document = await getDocumentById(docId);
+          if (document) {
+            const lines = document.content.split("\n");
+            const newFlashcards: Flashcard[] = [];
+            let currentQuestion = "";
+
+            for (const line of lines) {
+              if (line.includes(flag)) {
+                const parts = line.split(flag);
+                const question = currentQuestion.trim();
+                const answer = parts[1].trim();
+                if (question) {
+                  newFlashcards.push({ question, answer });
+                }
+                currentQuestion = "";
+              } else {
+                currentQuestion += line + "\n";
+              }
+            }
+            context.setFlashcards(newFlashcards);
+          }
+        } catch (error) {
+          console.error("Error fetching or building flashcards:", error);
+        }
+      }
+    };
+    fetchAndBuildFlashcards();
+  }, [docId, flag]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -28,8 +66,7 @@ export default function FlashcardsPage() {
     return null;
   }
 
-  const flashcards = context ? context.flashcards : [];
-  const setFlashcards = context ? context.setFlashcards : () => {};
+  const { flashcards, setFlashcards } = context;
   const handleNext = () => {
     setIsFading(true);
     const duration = isFlipped ? 250 : 150;

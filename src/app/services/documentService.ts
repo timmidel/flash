@@ -6,6 +6,7 @@ type Document = {
   folder_id?: string | null;
   title: string;
   content: string;
+  answer_flag?: string;
   created_at?: string;
 };
 
@@ -26,6 +27,17 @@ export async function getDocumentsByUser(userId: string) {
     .select("*")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return data;
+}
+
+export async function getDocumentById(id: string) {
+  const { data, error } = await supabase
+    .from("documents")
+    .select("*")
+    .eq("id", id)
+    .single();
 
   if (error) throw error;
   return data;

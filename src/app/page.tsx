@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useContext, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import * as mammoth from "mammoth";
-import { Flashcard, FlashcardContext } from "./context/FlashcardContext";
 import { supabase } from "./lib/supabaseClient";
 import { User } from "@supabase/supabase-js";
 import {
@@ -13,12 +12,14 @@ import {
   deleteDocument,
 } from "./services/documentService";
 import { Trash2 } from "lucide-react";
-import DeleteConfirmationModal from "./components/DeleteConfirmationModal"; // Import the modal component
+import DeleteConfirmationModal from "./components/DeleteConfirmationModal";
+import QuizTypeSelectionModal from "./components/QuizTypeSelectionModal";
 
 type Document = {
   id: string;
   title: string;
   content: string;
+  answer_flag: string;
 };
 
 export default function Home() {
@@ -27,13 +28,15 @@ export default function Home() {
   const [dragged, setDragged] =
     useState<React.DragEvent<HTMLDivElement> | null>(null);
   const [quizType, setQuizType] = useState("classic");
-  const context = useContext(FlashcardContext);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const router = useRouter();
   const [user, setUser] = useState<User | null | undefined>(undefined); // Add 'undefined' for loading state
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<string | null>(null);
+  const [isQuizTypeModalOpen, setIsQuizTypeModalOpen] = useState(false);
+  const [selectedDocIdForQuiz, setSelectedDocIdForQuiz] = useState<string | null>(null);
+  const [selectedDocFlagForQuiz, setSelectedDocFlagForQuiz] = useState<string | null>(null);
 
   useEffect(() => {
     const {
@@ -107,12 +110,6 @@ export default function Home() {
     );
   }
 
-  if (!context) {
-    return null;
-  }
-
-  const { setFlashcards } = context;
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       if (e.target.files.length === 0) {
@@ -139,67 +136,27 @@ export default function Home() {
     setFlag(e.target.value);
   };
 
-  const buildFlashcards = (text: string) => {
-    const lines = text.split("\n");
-    const newFlashcards: { question: string; answer: string }[] = [];
-    let currentQuestion = "";
-
-    for (const line of lines) {
-      if (line.includes(flag)) {
-        const parts = line.split(flag);
-        const question = currentQuestion.trim();
-        const answer = parts[1].trim();
-        if (question) {
-          newFlashcards.push({ question, answer });
-        }
-        currentQuestion = "";
-      } else {
-        currentQuestion += line + "\n";
-      }
-    }
-
-    setFlashcards(newFlashcards);
-  };
-
-  const buildMultipleChoice = (text: string) => {
-    const lines = text.split("\n");
-    const newFlashcards: Flashcard[] = [];
-    let currentQuestion = "";
-    let choices: { letter: string; text: string }[] = [];
-
-    for (const line of lines) {
-      if (line.match(/^[A-Z]\./)) {
-        const letter = line.charAt(0);
-        const choiceText = line.substring(2).trim();
-        choices.push({ letter, text: choiceText });
-      } else if (line.includes(flag)) {
-        const answer = line.split(flag)[1].trim().replace(".", "");
-        if (currentQuestion && choices.length > 0) {
-          newFlashcards.push({ question: currentQuestion, choices, answer });
-        }
-        currentQuestion = "";
-        choices = [];
-      } else if (line.trim()) {
-        currentQuestion += line + "\n";
-      }
-    }
-    setFlashcards(newFlashcards);
-  };
-
   const saveDocument = async (content: string) => {
     try {
       const newDoc = await createDocument({
         title: file?.name || "Untitled Document",
         content,
+        answer_flag: flag,
         folder_id: null,
         user_id: user?.id,
       });
       console.log("Created:", newDoc);
       if (newDoc) {
         if (quizType === "classic") {
-          router.push("/flashcards");
+          router.push(
+            `/flashcards?docId=${newDoc.id}&flag=${encodeURIComponent(flag)}`
+          );
         } else {
-          router.push("/multiple-choice");
+          router.push(
+            `/multiple-choice?docId=${newDoc.id}&flag=${encodeURIComponent(
+              flag
+            )}`
+          );
         }
       }
     } catch (error) {
@@ -219,11 +176,6 @@ export default function Home() {
         const arrayBuffer = e.target.result as ArrayBuffer;
         const result = await mammoth.extractRawText({ arrayBuffer });
         const text = result.value;
-        if (quizType === "classic") {
-          buildFlashcards(text);
-        } else {
-          buildMultipleChoice(text);
-        }
         saveDocument(text);
       }
     };
@@ -256,14 +208,10 @@ export default function Home() {
     router.push("/login");
   };
 
-  const handleDocumentClick = (content: string) => {
-    if (quizType === "classic") {
-      buildFlashcards(content);
-      router.push("/flashcards");
-    } else {
-      buildMultipleChoice(content);
-      router.push("/multiple-choice");
-    }
+  const handleDocumentClick = (doc: Document) => {
+    setSelectedDocIdForQuiz(doc.id);
+    setSelectedDocFlagForQuiz(doc.answer_flag);
+    setIsQuizTypeModalOpen(true);
   };
 
   return (
@@ -385,7 +333,7 @@ export default function Home() {
               {documents.map((doc) => (
                 <li
                   key={doc.id}
-                  onClick={() => handleDocumentClick(doc.content)}
+                  onClick={() => handleDocumentClick(doc)}
                   className="bg-gray-800 p-4 rounded-lg cursor-pointer flex justify-between items-center transition-transform duration-200 hover:scale-101 hover:bg-gray-700"
                 >
                   <div>
@@ -410,6 +358,12 @@ export default function Home() {
           isOpen={isModalOpen}
           onClose={closeModal}
           onConfirm={confirmDelete}
+        />
+        <QuizTypeSelectionModal
+          isOpen={isQuizTypeModalOpen}
+          onClose={() => setIsQuizTypeModalOpen(false)}
+          docId={selectedDocIdForQuiz}
+          flag={selectedDocFlagForQuiz}
         />
       </div>
     )

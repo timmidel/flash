@@ -1,14 +1,63 @@
 "use client";
 
 import { useContext, useState, useEffect } from "react";
-import { FlashcardContext } from "../context/FlashcardContext";
+import { useSearchParams } from "next/navigation";
+import { FlashcardContext, Flashcard } from "../context/FlashcardContext";
 import MultipleChoiceCard from "../components/MultipleChoiceCard";
 import { Shuffle } from "lucide-react";
+import { getDocumentById } from "../services/documentService";
 
 export default function MultipleChoicePage() {
   const context = useContext(FlashcardContext);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFading, setIsFading] = useState(false);
+  const searchParams = useSearchParams();
+  const docId = searchParams.get("docId");
+  const flag = searchParams.get("flag");
+
+  useEffect(() => {
+    const fetchAndBuildMultipleChoice = async () => {
+      if (docId && flag && context) {
+        try {
+          const document = await getDocumentById(docId);
+          if (document) {
+            const lines = document.content.split("\n");
+            const newFlashcards: Flashcard[] = [];
+            const existingFlashcards = context.flashcards;
+            let currentQuestion = "";
+            let choices: { letter: string; text: string }[] = [];
+
+            for (const line of lines) {
+              if (line.match(/^[A-Z]\./)) {
+                const letter = line.charAt(0);
+                const choiceText = line.substring(2).trim();
+                choices.push({ letter, text: choiceText });
+              } else if (line.includes(flag)) {
+                const answer = line.split(flag)[1].trim().replace(".", "");
+                if (currentQuestion && choices.length > 0) {
+                  const newCard: Flashcard = { question: currentQuestion, choices, answer };
+                  const existingCard = existingFlashcards.find(card => card.question === newCard.question);
+                  if (existingCard) {
+                    newCard.selectedAnswer = existingCard.selectedAnswer;
+                    newCard.isRevealed = existingCard.isRevealed;
+                  }
+                  newFlashcards.push(newCard);
+                }
+                currentQuestion = "";
+                choices = [];
+              } else if (line.trim()) {
+                currentQuestion += line + "\n";
+              }
+            }
+            context.setFlashcards(newFlashcards);
+          }
+        } catch (error) {
+          console.error("Error fetching or building multiple choice questions:", error);
+        }
+      }
+    };
+    fetchAndBuildMultipleChoice();
+  }, [docId, flag]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
