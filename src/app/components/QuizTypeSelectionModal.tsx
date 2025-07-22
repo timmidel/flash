@@ -25,11 +25,15 @@ const QuizTypeSelectionModal = ({
     if (docId && flag) {
       if (type === "classic") {
         router.push(
-          `/flashcards?docId=${docId}&flag=${encodeURIComponent(flag)}&rationaleFlag=${encodeURIComponent(rationaleFlag)}`
+          `/flashcards?docId=${docId}&flag=${encodeURIComponent(
+            flag
+          )}&rationaleFlag=${encodeURIComponent(rationaleFlag || "")}`
         );
       } else {
         router.push(
-          `/multiple-choice?docId=${docId}&flag=${encodeURIComponent(flag)}&rationaleFlag=${encodeURIComponent(rationaleFlag)}`
+          `/multiple-choice?docId=${docId}&flag=${encodeURIComponent(
+            flag
+          )}&rationaleFlag=${encodeURIComponent(rationaleFlag || "")}`
         );
       }
       onClose();
