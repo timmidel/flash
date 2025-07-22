@@ -7,6 +7,7 @@ type Document = {
   title: string;
   content: string;
   answer_flag?: string;
+  rationale_flag?: string;
   created_at?: string;
 };
 

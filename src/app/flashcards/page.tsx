@@ -2,7 +2,7 @@
 
 import { useContext, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { Shuffle } from "lucide-react";
+import { Shuffle, Eye, EyeOff } from "lucide-react";
 import { FlashcardContext, Flashcard } from "../context/FlashcardContext";
 import FlashcardComponent from "../components/Flashcard";
 import { getDocumentById } from "../services/documentService";
@@ -11,10 +11,12 @@ export default function FlashcardsPage() {
   const context = useContext(FlashcardContext);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
+  const [showRationale, setShowRationale] = useState(false);
   const [isFading, setIsFading] = useState(false);
   const searchParams = useSearchParams();
   const docId = searchParams.get("docId");
   const flag = searchParams.get("flag");
+  const rationaleFlag = searchParams.get("rationaleFlag");
 
   useEffect(() => {
     const fetchAndBuildFlashcards = async () => {
@@ -32,10 +34,22 @@ export default function FlashcardsPage() {
                 const question = currentQuestion.trim();
                 const answer = parts[1].trim();
                 if (question) {
-                  newFlashcards.push({ question, answer });
+                  newFlashcards.push({
+                    question,
+                    answer,
+                    rationale: "", // Initialize empty, will be filled later
+                  });
                 }
                 currentQuestion = "";
-              } else {
+              } else if (rationaleFlag && line.includes(rationaleFlag)) {
+                const parts = line.split(rationaleFlag);
+                const rationale = parts[1].trim();
+                // Apply to the last created flashcard
+                if (newFlashcards.length > 0) {
+                  newFlashcards[newFlashcards.length - 1].rationale = rationale;
+                }
+              } else if (line.trim()) {
+                // Only add non-empty lines
                 currentQuestion += line + "\n";
               }
             }
@@ -47,7 +61,7 @@ export default function FlashcardsPage() {
       }
     };
     fetchAndBuildFlashcards();
-  }, [docId, flag]);
+  }, [docId, flag, rationaleFlag]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -118,15 +132,28 @@ export default function FlashcardsPage() {
           flashcard={flashcards[currentIndex]}
           isFlipped={isFlipped}
           onClick={() => setIsFlipped(!isFlipped)}
+          showRationale={showRationale}
         />
       </div>
-      <div className="fixed top-4 right-4">
+      <div className="fixed top-4 right-4 flex space-x-2">
         <button
           onClick={handleShuffle}
           className="px-4 py-2 text-white rounded-md cursor-pointer hover:scale-125 transition-all focus:outline-none focus:ring-0"
         >
           <Shuffle className="w-9 h-9" />
         </button>
+        {flashcards[currentIndex]?.rationale && (
+          <button
+            onClick={() => setShowRationale(!showRationale)}
+            className="px-4 py-2 text-white rounded-md cursor-pointer hover:scale-125 transition-all focus:outline-none focus:ring-0"
+          >
+            {showRationale ? (
+              <Eye className="w-9 h-9" />
+            ) : (
+              <EyeOff className="w-9 h-9" />
+            )}
+          </button>
+        )}
       </div>
       <div className="bg-gray-900/90 fixed bottom-0 left-0 right-0 p-4 flex items-center justify-center space-x-4">
         <button

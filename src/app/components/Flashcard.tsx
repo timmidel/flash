@@ -4,12 +4,14 @@ interface FlashcardProps {
   flashcard: Flashcard;
   isFlipped: boolean;
   onClick: () => void;
+  showRationale: boolean;
 }
 
 export default function FlashcardComponent({
   flashcard,
   isFlipped,
   onClick,
+  showRationale,
 }: FlashcardProps) {
   // Create a hidden element to measure the maximum height needed
   const measureContent = (content: string) => {
@@ -49,6 +51,12 @@ export default function FlashcardComponent({
           <p className="text-2xl text-gray-200 whitespace-pre-wrap">
             {flashcard.answer}
           </p>
+          {showRationale && flashcard.rationale && (
+            <div className="absolute bottom-4 left-4 right-4 text-sm text-gray-400 border-t border-gray-700 pt-2">
+              <p className="font-semibold">Rationale:</p>
+              <p>{flashcard.rationale}</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -5,9 +5,10 @@ import { Flashcard } from '../context/FlashcardContext';
 type MultipleChoiceCardProps = {
   card: Flashcard;
   onChoiceSelected: (choice: string) => void;
+  showRationale: boolean;
 };
 
-const MultipleChoiceCard = ({ card, onChoiceSelected }: MultipleChoiceCardProps) => {
+const MultipleChoiceCard = ({ card, onChoiceSelected, showRationale }: MultipleChoiceCardProps) => {
   const handleChoiceClick = (choice: string) => {
     if (!card.isRevealed) {
       onChoiceSelected(choice);
@@ -47,6 +48,12 @@ const MultipleChoiceCard = ({ card, onChoiceSelected }: MultipleChoiceCardProps)
           );
         })}
       </div>
+      {card.isRevealed && card.rationale && showRationale && (
+        <div className="mt-4 text-sm text-gray-400 border-t border-gray-700 pt-2">
+          <p className="font-semibold">Rationale:</p>
+          <p>{card.rationale}</p>
+        </div>
+      )}
     </div>
   );
 };

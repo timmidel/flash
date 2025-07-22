@@ -20,11 +20,13 @@ type Document = {
   title: string;
   content: string;
   answer_flag: string;
+  rationale_flag?: string;
 };
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
   const [flag, setFlag] = useState("Answer:");
+  const [rationaleFlag, setRationaleFlag] = useState("Rationale:");
   const [dragged, setDragged] =
     useState<React.DragEvent<HTMLDivElement> | null>(null);
   const [quizType, setQuizType] = useState("classic");
@@ -37,6 +39,7 @@ export default function Home() {
   const [isQuizTypeModalOpen, setIsQuizTypeModalOpen] = useState(false);
   const [selectedDocIdForQuiz, setSelectedDocIdForQuiz] = useState<string | null>(null);
   const [selectedDocFlagForQuiz, setSelectedDocFlagForQuiz] = useState<string | null>(null);
+  const [selectedDocRationaleFlagForQuiz, setSelectedDocRationaleFlagForQuiz] = useState<string | null>(null);
 
   useEffect(() => {
     const {
@@ -142,6 +145,7 @@ export default function Home() {
         title: file?.name || "Untitled Document",
         content,
         answer_flag: flag,
+        rationale_flag: rationaleFlag,
         folder_id: null,
         user_id: user?.id,
       });
@@ -149,13 +153,13 @@ export default function Home() {
       if (newDoc) {
         if (quizType === "classic") {
           router.push(
-            `/flashcards?docId=${newDoc.id}&flag=${encodeURIComponent(flag)}`
+            `/flashcards?docId=${newDoc.id}&flag=${encodeURIComponent(flag)}&rationaleFlag=${encodeURIComponent(rationaleFlag)}`
           );
         } else {
           router.push(
             `/multiple-choice?docId=${newDoc.id}&flag=${encodeURIComponent(
               flag
-            )}`
+            )}&rationaleFlag=${encodeURIComponent(rationaleFlag)}`
           );
         }
       }
@@ -211,6 +215,7 @@ export default function Home() {
   const handleDocumentClick = (doc: Document) => {
     setSelectedDocIdForQuiz(doc.id);
     setSelectedDocFlagForQuiz(doc.answer_flag);
+    setSelectedDocRationaleFlagForQuiz(doc.rationale_flag || null);
     setIsQuizTypeModalOpen(true);
   };
 
@@ -298,6 +303,24 @@ export default function Home() {
             </div>
             <div>
               <label
+                htmlFor="rationale-flag"
+                className="block text-sm font-medium text-gray-300"
+              >
+                Rationale Flag
+              </label>
+              <div className="mt-1">
+                <input
+                  id="rationale-flag"
+                  name="rationale-flag"
+                  type="text"
+                  value={rationaleFlag}
+                  onChange={(e) => setRationaleFlag(e.target.value)}
+                  className="appearance-none block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                />
+              </div>
+            </div>
+            <div>
+              <label
                 htmlFor="quiz-type"
                 className="block text-sm font-medium text-gray-300 mt-4"
               >
@@ -364,6 +387,7 @@ export default function Home() {
           onClose={() => setIsQuizTypeModalOpen(false)}
           docId={selectedDocIdForQuiz}
           flag={selectedDocFlagForQuiz}
+          rationaleFlag={selectedDocRationaleFlagForQuiz}
         />
       </div>
     )

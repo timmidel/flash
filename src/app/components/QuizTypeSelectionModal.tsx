@@ -7,6 +7,7 @@ type QuizTypeSelectionModalProps = {
   onClose: () => void;
   docId: string | null;
   flag: string | null;
+  rationaleFlag: string | null;
 };
 
 const QuizTypeSelectionModal = ({
@@ -14,6 +15,7 @@ const QuizTypeSelectionModal = ({
   onClose,
   docId,
   flag,
+  rationaleFlag,
 }: QuizTypeSelectionModalProps) => {
   const router = useRouter();
 
@@ -23,11 +25,11 @@ const QuizTypeSelectionModal = ({
     if (docId && flag) {
       if (type === "classic") {
         router.push(
-          `/flashcards?docId=${docId}&flag=${encodeURIComponent(flag)}`
+          `/flashcards?docId=${docId}&flag=${encodeURIComponent(flag)}&rationaleFlag=${encodeURIComponent(rationaleFlag)}`
         );
       } else {
         router.push(
-          `/multiple-choice?docId=${docId}&flag=${encodeURIComponent(flag)}`
+          `/multiple-choice?docId=${docId}&flag=${encodeURIComponent(flag)}&rationaleFlag=${encodeURIComponent(rationaleFlag)}`
         );
       }
       onClose();

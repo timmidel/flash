@@ -4,16 +4,18 @@ import { useContext, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { FlashcardContext, Flashcard } from "../context/FlashcardContext";
 import MultipleChoiceCard from "../components/MultipleChoiceCard";
-import { Shuffle } from "lucide-react";
+import { Shuffle, Eye, EyeOff } from "lucide-react";
 import { getDocumentById } from "../services/documentService";
 
 export default function MultipleChoicePage() {
   const context = useContext(FlashcardContext);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFading, setIsFading] = useState(false);
+  const [showRationale, setShowRationale] = useState(false);
   const searchParams = useSearchParams();
   const docId = searchParams.get("docId");
   const flag = searchParams.get("flag");
+  const rationaleFlag = searchParams.get("rationaleFlag");
 
   useEffect(() => {
     const fetchAndBuildMultipleChoice = async () => {
@@ -26,6 +28,7 @@ export default function MultipleChoicePage() {
             const existingFlashcards = context.flashcards;
             let currentQuestion = "";
             let choices: { letter: string; text: string }[] = [];
+            let lastFlashcardIndex = -1;
 
             for (const line of lines) {
               if (line.match(/^[A-Z]\./)) {
@@ -35,16 +38,30 @@ export default function MultipleChoicePage() {
               } else if (line.includes(flag)) {
                 const answer = line.split(flag)[1].trim().replace(".", "");
                 if (currentQuestion && choices.length > 0) {
-                  const newCard: Flashcard = { question: currentQuestion, choices, answer };
-                  const existingCard = existingFlashcards.find(card => card.question === newCard.question);
+                  const newCard: Flashcard = {
+                    question: currentQuestion,
+                    choices,
+                    answer,
+                    rationale: "",
+                  };
+                  const existingCard = existingFlashcards.find(
+                    (card) => card.question === newCard.question
+                  );
                   if (existingCard) {
                     newCard.selectedAnswer = existingCard.selectedAnswer;
                     newCard.isRevealed = existingCard.isRevealed;
                   }
                   newFlashcards.push(newCard);
+                  lastFlashcardIndex = newFlashcards.length - 1;
                 }
                 currentQuestion = "";
                 choices = [];
+              } else if (rationaleFlag && line.includes(rationaleFlag)) {
+                const parts = line.split(rationaleFlag);
+                const rationale = parts[1].trim();
+                if (lastFlashcardIndex !== -1) {
+                  newFlashcards[lastFlashcardIndex].rationale = rationale;
+                }
               } else if (line.trim()) {
                 currentQuestion += line + "\n";
               }
@@ -52,12 +69,15 @@ export default function MultipleChoicePage() {
             context.setFlashcards(newFlashcards);
           }
         } catch (error) {
-          console.error("Error fetching or building multiple choice questions:", error);
+          console.error(
+            "Error fetching or building multiple choice questions:",
+            error
+          );
         }
       }
     };
     fetchAndBuildMultipleChoice();
-  }, [docId, flag]);
+  }, [docId, flag, rationaleFlag]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -133,15 +153,28 @@ export default function MultipleChoicePage() {
         <MultipleChoiceCard
           card={flashcards[currentIndex]}
           onChoiceSelected={handleChoiceSelected}
+          showRationale={showRationale}
         />
       </div>
-      <div className="fixed top-4 right-4">
+      <div className="fixed top-4 right-4 flex space-x-2">
         <button
           onClick={handleShuffle}
           className="px-4 py-2 text-white rounded-md cursor-pointer hover:scale-125 transition-all focus:outline-none focus:ring-0"
         >
           <Shuffle className="w-9 h-9" />
         </button>
+        {flashcards[currentIndex]?.rationale && (
+          <button
+            onClick={() => setShowRationale(!showRationale)}
+            className="px-4 py-2 text-white rounded-md cursor-pointer hover:scale-125 transition-all focus:outline-none focus:ring-0"
+          >
+            {showRationale ? (
+              <Eye className="w-9 h-9" />
+            ) : (
+              <EyeOff className="w-9 h-9" />
+            )}
+          </button>
+        )}
       </div>
       <div className="bg-gray-900/90 fixed bottom-0 left-0 right-0 p-4 flex items-center justify-center space-x-4">
         <button
