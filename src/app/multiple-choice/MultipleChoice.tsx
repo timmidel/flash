@@ -7,7 +7,7 @@ import MultipleChoiceCard from "../components/MultipleChoiceCard";
 import { Shuffle, Eye, EyeOff } from "lucide-react";
 import { getDocumentById } from "../services/documentService";
 
-export default function MultipleChoicePage() {
+export default function MultipleChoice() {
   const context = useContext(FlashcardContext);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFading, setIsFading] = useState(false);
