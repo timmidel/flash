@@ -6,6 +6,7 @@ import { FlashcardContext, Flashcard } from "../context/FlashcardContext";
 import MultipleChoiceCard from "../components/MultipleChoiceCard";
 import { Shuffle, Eye, EyeOff } from "lucide-react";
 import { getDocumentById } from "../services/documentService";
+import { getRationaleImageByDocument } from "../services/rationaleImageService";
 
 export default function MultipleChoice() {
   const context = useContext(FlashcardContext);
@@ -22,11 +23,13 @@ export default function MultipleChoice() {
       if (docId && flag && context) {
         try {
           const document = await getDocumentById(docId);
+          const rationaleImages = await getRationaleImageByDocument(docId);
           if (document) {
             const lines = document.content.split("\n");
             const newFlashcards: Flashcard[] = [];
             const existingFlashcards = context.flashcards;
             let currentQuestion = "";
+            let rationaleIndex = 0;
             let choices: { letter: string; text: string }[] = [];
             let lastFlashcardIndex = -1;
 
@@ -58,10 +61,17 @@ export default function MultipleChoice() {
                 choices = [];
               } else if (rationaleFlag && line.includes(rationaleFlag)) {
                 const parts = line.split(rationaleFlag);
+                const rationaleImageWithIndex = rationaleImages.find(
+                  (img) => img.rationale_index === rationaleIndex
+                );
                 const rationale = parts[1].trim();
-                if (lastFlashcardIndex !== -1) {
+                if (lastFlashcardIndex !== -1 && rationaleImageWithIndex) {
+                  newFlashcards[newFlashcards.length - 1].rationaleImage =
+                    rationaleImageWithIndex.image_url;
+                } else if (lastFlashcardIndex !== -1) {
                   newFlashcards[lastFlashcardIndex].rationale = rationale;
                 }
+                rationaleIndex++;
               } else if (line.trim()) {
                 currentQuestion += line + "\n";
               }
@@ -163,7 +173,8 @@ export default function MultipleChoice() {
         >
           <Shuffle className="w-9 h-9" />
         </button>
-        {flashcards[currentIndex]?.rationale && (
+        {(flashcards[currentIndex]?.rationale ||
+          flashcards[currentIndex]?.rationaleImage) && (
           <button
             onClick={() => setShowRationale(!showRationale)}
             className="px-4 py-2 text-white rounded-md cursor-pointer hover:scale-125 transition-all focus:outline-none focus:ring-0"

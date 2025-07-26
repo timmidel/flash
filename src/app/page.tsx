@@ -14,6 +14,10 @@ import {
 import { Trash2 } from "lucide-react";
 import DeleteConfirmationModal from "./components/DeleteConfirmationModal";
 import QuizTypeSelectionModal from "./components/QuizTypeSelectionModal";
+import {
+  createRationaleImage,
+  extractImages,
+} from "./services/rationaleImageService";
 
 type Document = {
   id: string;
@@ -37,9 +41,14 @@ export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<string | null>(null);
   const [isQuizTypeModalOpen, setIsQuizTypeModalOpen] = useState(false);
-  const [selectedDocIdForQuiz, setSelectedDocIdForQuiz] = useState<string | null>(null);
-  const [selectedDocFlagForQuiz, setSelectedDocFlagForQuiz] = useState<string | null>(null);
-  const [selectedDocRationaleFlagForQuiz, setSelectedDocRationaleFlagForQuiz] = useState<string | null>(null);
+  const [selectedDocIdForQuiz, setSelectedDocIdForQuiz] = useState<
+    string | null
+  >(null);
+  const [selectedDocFlagForQuiz, setSelectedDocFlagForQuiz] = useState<
+    string | null
+  >(null);
+  const [selectedDocRationaleFlagForQuiz, setSelectedDocRationaleFlagForQuiz] =
+    useState<string | null>(null);
 
   useEffect(() => {
     const {
@@ -139,7 +148,7 @@ export default function Home() {
     setFlag(e.target.value);
   };
 
-  const saveDocument = async (content: string) => {
+  const saveDocument = async (content: string, arrayBuffer: ArrayBuffer) => {
     try {
       const newDoc = await createDocument({
         title: file?.name || "Untitled Document",
@@ -150,10 +159,29 @@ export default function Home() {
         user_id: user?.id,
       });
       console.log("Created:", newDoc);
+      const extractedImages = await extractImages(arrayBuffer, rationaleFlag);
+      if (extractedImages.length > 0) {
+        for (const { file, rationaleIndex } of extractedImages) {
+          const uploadResult = await createRationaleImage(
+            {
+              document_id: newDoc.id,
+              rationale_index: rationaleIndex,
+              image_url: "",
+            },
+            file
+          );
+          if (!uploadResult) {
+            toast.error("Failed to upload rationale image.");
+            return;
+          }
+        }
+      }
       if (newDoc) {
         if (quizType === "classic") {
           router.push(
-            `/flashcards?docId=${newDoc.id}&flag=${encodeURIComponent(flag)}&rationaleFlag=${encodeURIComponent(rationaleFlag)}`
+            `/flashcards?docId=${newDoc.id}&flag=${encodeURIComponent(
+              flag
+            )}&rationaleFlag=${encodeURIComponent(rationaleFlag)}`
           );
         } else {
           router.push(
@@ -180,7 +208,7 @@ export default function Home() {
         const arrayBuffer = e.target.result as ArrayBuffer;
         const result = await mammoth.extractRawText({ arrayBuffer });
         const text = result.value;
-        saveDocument(text);
+        saveDocument(text, arrayBuffer);
       }
     };
     reader.readAsArrayBuffer(file);

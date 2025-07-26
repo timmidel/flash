@@ -1,6 +1,6 @@
 "use client";
 
-import { Flashcard } from '../context/FlashcardContext';
+import { Flashcard } from "../context/FlashcardContext";
 
 type MultipleChoiceCardProps = {
   card: Flashcard;
@@ -8,7 +8,11 @@ type MultipleChoiceCardProps = {
   showRationale: boolean;
 };
 
-const MultipleChoiceCard = ({ card, onChoiceSelected, showRationale }: MultipleChoiceCardProps) => {
+const MultipleChoiceCard = ({
+  card,
+  onChoiceSelected,
+  showRationale,
+}: MultipleChoiceCardProps) => {
   const handleChoiceClick = (choice: string) => {
     if (!card.isRevealed) {
       onChoiceSelected(choice);
@@ -48,12 +52,25 @@ const MultipleChoiceCard = ({ card, onChoiceSelected, showRationale }: MultipleC
           );
         })}
       </div>
-      {card.isRevealed && card.rationale && showRationale && (
-        <div className="mt-4 text-sm text-gray-400 border-t border-gray-700 pt-2">
-          <p className="font-semibold">Rationale:</p>
-          <p>{card.rationale}</p>
-        </div>
-      )}
+      {showRationale &&
+        card.isRevealed &&
+        (card.rationaleImage ? (
+          <div className="w-full">
+            <p className="text-sm text-gray-400 font-semibold mt-2">
+              Rationale:
+            </p>
+            <img
+              src={card.rationaleImage}
+              alt="Rationale"
+              className="mt-2 max-w-full h-auto rounded-lg"
+            />
+          </div>
+        ) : card.rationale ? (
+          <div className="w-full text-sm text-gray-400 border-t border-gray-700 pt-2">
+            <p className="font-semibold">Rationale:</p>
+            <p>{card.rationale}</p>
+          </div>
+        ) : null)}
     </div>
   );
 };

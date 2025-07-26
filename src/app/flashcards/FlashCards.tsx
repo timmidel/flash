@@ -6,6 +6,7 @@ import { Shuffle, Eye, EyeOff } from "lucide-react";
 import { FlashcardContext, Flashcard } from "../context/FlashcardContext";
 import FlashcardComponent from "../components/Flashcard";
 import { getDocumentById } from "../services/documentService";
+import { getRationaleImageByDocument } from "../services/rationaleImageService";
 
 export default function Flashcards() {
   const context = useContext(FlashcardContext);
@@ -23,10 +24,12 @@ export default function Flashcards() {
       if (docId && flag && context) {
         try {
           const document = await getDocumentById(docId);
+          const rationaleImages = await getRationaleImageByDocument(docId);
           if (document) {
             const lines = document.content.split("\n");
             const newFlashcards: Flashcard[] = [];
             let currentQuestion = "";
+            let rationaleIndex = 0;
 
             for (const line of lines) {
               if (line.includes(flag)) {
@@ -43,11 +46,17 @@ export default function Flashcards() {
                 currentQuestion = "";
               } else if (rationaleFlag && line.includes(rationaleFlag)) {
                 const parts = line.split(rationaleFlag);
-                const rationale = parts[1].trim();
+                const rationaleImageWithIndex = rationaleImages.find(
+                  (img) => img.rationale_index === rationaleIndex
+                );
                 // Apply to the last created flashcard
-                if (newFlashcards.length > 0) {
-                  newFlashcards[newFlashcards.length - 1].rationale = rationale;
-                }
+                if (rationaleImageWithIndex && newFlashcards.length > 0)
+                  newFlashcards[newFlashcards.length - 1].rationaleImage =
+                    rationaleImageWithIndex.image_url;
+                else if (newFlashcards.length > 0)
+                  newFlashcards[newFlashcards.length - 1].rationale =
+                    parts[1].trim();
+                rationaleIndex++;
               } else if (line.trim()) {
                 // Only add non-empty lines
                 currentQuestion += line + "\n";
@@ -142,7 +151,8 @@ export default function Flashcards() {
         >
           <Shuffle className="w-9 h-9" />
         </button>
-        {flashcards[currentIndex]?.rationale && (
+        {(flashcards[currentIndex]?.rationale ||
+          flashcards[currentIndex]?.rationaleImage) && (
           <button
             onClick={() => setShowRationale(!showRationale)}
             className="px-4 py-2 text-white rounded-md cursor-pointer hover:scale-125 transition-all focus:outline-none focus:ring-0"
