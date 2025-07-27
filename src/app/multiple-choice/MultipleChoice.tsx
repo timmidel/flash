@@ -7,6 +7,7 @@ import MultipleChoiceCard from "../components/MultipleChoiceCard";
 import { Shuffle, Eye, EyeOff } from "lucide-react";
 import { getDocumentById } from "../services/documentService";
 import { getRationaleImageByDocument } from "../services/rationaleImageService";
+import Spinner from "../components/Spinner";
 
 export default function MultipleChoice() {
   const context = useContext(FlashcardContext);
@@ -17,6 +18,7 @@ export default function MultipleChoice() {
   const docId = searchParams.get("docId");
   const flag = searchParams.get("flag");
   const rationaleFlag = searchParams.get("rationaleFlag");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchAndBuildMultipleChoice = async () => {
@@ -83,6 +85,8 @@ export default function MultipleChoice() {
             "Error fetching or building multiple choice questions:",
             error
           );
+        } finally {
+          setLoading(false);
         }
       }
     };
@@ -142,6 +146,10 @@ export default function MultipleChoice() {
     setFlashcards(shuffledFlashcards);
     setCurrentIndex(0);
   };
+
+  if (loading) {
+    return <Spinner />;
+  }
 
   if (flashcards.length === 0) {
     return (

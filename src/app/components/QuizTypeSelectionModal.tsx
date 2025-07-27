@@ -36,7 +36,6 @@ const QuizTypeSelectionModal = ({
           )}&rationaleFlag=${encodeURIComponent(rationaleFlag || "")}`
         );
       }
-      onClose();
     }
   };
 

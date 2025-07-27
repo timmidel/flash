@@ -7,6 +7,7 @@ import { FlashcardContext, Flashcard } from "../context/FlashcardContext";
 import FlashcardComponent from "../components/Flashcard";
 import { getDocumentById } from "../services/documentService";
 import { getRationaleImageByDocument } from "../services/rationaleImageService";
+import Spinner from "../components/Spinner";
 
 export default function Flashcards() {
   const context = useContext(FlashcardContext);
@@ -14,6 +15,7 @@ export default function Flashcards() {
   const [isFlipped, setIsFlipped] = useState(false);
   const [showRationale, setShowRationale] = useState(false);
   const [isFading, setIsFading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const searchParams = useSearchParams();
   const docId = searchParams.get("docId");
   const flag = searchParams.get("flag");
@@ -66,6 +68,8 @@ export default function Flashcards() {
           }
         } catch (error) {
           console.error("Error fetching or building flashcards:", error);
+        } finally {
+          setLoading(false);
         }
       }
     };
@@ -119,6 +123,10 @@ export default function Flashcards() {
     setCurrentIndex(0);
     setIsFlipped(false);
   };
+
+  if (loading) {
+    return <Spinner />;
+  }
 
   if (flashcards.length === 0) {
     return (

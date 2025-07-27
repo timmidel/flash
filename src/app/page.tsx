@@ -18,6 +18,7 @@ import {
   createRationaleImage,
   extractImages,
 } from "./services/rationaleImageService";
+import Spinner from "./components/Spinner";
 
 type Document = {
   id: string;
@@ -49,6 +50,7 @@ export default function Home() {
   >(null);
   const [selectedDocRationaleFlagForQuiz, setSelectedDocRationaleFlagForQuiz] =
     useState<string | null>(null);
+  const [generating, setGenerating] = useState(false);
 
   useEffect(() => {
     const {
@@ -115,11 +117,7 @@ export default function Home() {
   };
 
   if (user === undefined) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-900">
-        <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-purple-500"></div>
-      </div>
-    );
+    return <Spinner />;
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -201,14 +199,15 @@ export default function Home() {
       toast.error("Please upload a Word document.");
       return;
     }
-
+    setGenerating(true);
     const reader = new FileReader();
     reader.onload = async (e) => {
       if (e.target?.result) {
         const arrayBuffer = e.target.result as ArrayBuffer;
         const result = await mammoth.extractRawText({ arrayBuffer });
         const text = result.value;
-        saveDocument(text, arrayBuffer);
+        await saveDocument(text, arrayBuffer);
+        setGenerating(false);
       }
     };
     reader.readAsArrayBuffer(file);
@@ -247,7 +246,9 @@ export default function Home() {
     setIsQuizTypeModalOpen(true);
   };
 
-  return (
+  return generating ? (
+    <Spinner>Generating...</Spinner>
+  ) : (
     user && (
       <div className="min-h-screen bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto">
