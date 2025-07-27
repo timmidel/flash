@@ -21,12 +21,15 @@ const MultipleChoiceCard = ({
 
   return (
     <div className="bg-gray-800 p-6 rounded-lg shadow-lg text-white">
-      <h2 className="text-xl font-bold mb-4">{card.question}</h2>
+      <h2 className="md:text-xl md:font-semibold text-lg mb-4">
+        {card.question}
+      </h2>
       <div className="space-y-2">
         {card.choices?.map((choice) => {
           const isCorrect = choice.letter === card.answer;
           const isSelected = choice.letter === card.selectedAnswer;
-          let buttonClass = "w-full text-left p-2 rounded-md ";
+          let buttonClass =
+            "w-full text-left p-2 rounded-md cursor-pointer transition-colors ";
 
           if (card.isRevealed) {
             if (isCorrect) {
@@ -56,7 +59,7 @@ const MultipleChoiceCard = ({
         card.isRevealed &&
         (card.rationaleImage ? (
           <div className="w-full">
-            <p className="text-sm text-gray-400 font-semibold mt-2">
+            <p className="text-sm text-gray-400 font-semibold mt-5 mb-2">
               Rationale:
             </p>
             <img

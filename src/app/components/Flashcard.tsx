@@ -19,11 +19,21 @@ export default function FlashcardComponent({
   const [cardHeight, setCardHeight] = useState<number>(120);
 
   useEffect(() => {
-    const frontHeight = frontRef.current?.offsetHeight || 0;
-    const backHeight = backRef.current?.offsetHeight || 0;
-    const maxHeight = Math.max(frontHeight, backHeight, 120);
-    setCardHeight(maxHeight);
-  }, [flashcard, showRationale]);
+    const updateHeight = () => {
+      const frontHeight = frontRef.current?.offsetHeight || 0;
+      const backHeight = backRef.current?.offsetHeight || 0;
+      const maxHeight = Math.max(frontHeight, backHeight, 120);
+      setCardHeight(maxHeight);
+    };
+
+    updateHeight();
+
+    // Watch for image load changes (for rationale images)
+    const images = backRef.current?.getElementsByTagName("img") || [];
+    for (const img of images) {
+      img.onload = updateHeight;
+    }
+  }, [flashcard, showRationale, isFlipped]);
 
   return (
     <div
@@ -32,9 +42,9 @@ export default function FlashcardComponent({
       style={{ perspective: "1000px", minHeight: cardHeight }}
     >
       {/* Front and Back Sizing Measurement */}
-      <div className="invisible absolute pointer-events-none w-full">
+      <div className="absolute opacity-0 pointer-events-none w-full">
         <div ref={frontRef} className="p-6 flex items-center justify-center">
-          <p className="text-2xl text-gray-200 whitespace-pre-wrap text-center">
+          <p className="md:text-xl text-lg text-gray-200 whitespace-pre-wrap text-center">
             {flashcard.question}
           </p>
         </div>
@@ -63,14 +73,20 @@ export default function FlashcardComponent({
         style={{ minHeight: cardHeight }}
       >
         {/* Front */}
-        <div className="bg-gray-800 rounded-lg p-6 backface-hidden flex items-center justify-center min-h-[120px]">
-          <p className="text-2xl text-gray-200 whitespace-pre-wrap">
+        <div
+          className="bg-gray-800 rounded-lg p-6 backface-hidden flex items-center justify-center min-h-[120px]"
+          style={{ minHeight: cardHeight }}
+        >
+          <p className="md:text-2xl text-lg text-gray-200 whitespace-pre-wrap">
             {flashcard.question}
           </p>
         </div>
 
         {/* Back */}
-        <div className="absolute inset-0 bg-gray-800 rounded-lg p-6 rotate-y-180 backface-hidden flex flex-col items-start justify-start space-y-4 overflow-y-auto">
+        <div
+          className="absolute inset-0 bg-gray-800 rounded-lg p-6 rotate-y-180 backface-hidden flex flex-col items-start justify-start space-y-4 overflow-y-auto"
+          style={{ minHeight: cardHeight }}
+        >
           <p className="text-2xl text-gray-200 whitespace-pre-wrap">
             {flashcard.answer}
           </p>

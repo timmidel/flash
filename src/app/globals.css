@@ -35,3 +35,16 @@ body {
 .transform-style-preserve-3d {
   transform-style: preserve-3d;
 }
+
+.fade-in {
+  animation: fadeIn 0.6s ease-in forwards;
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}

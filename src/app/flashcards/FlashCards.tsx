@@ -139,7 +139,7 @@ export default function Flashcards() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center relative pt-10 pb-20">
+    <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center relative pt-10 pb-20 overflow-hidden">
       <div
         className={`w-full max-w-2xl transition-opacity duration-300 ${
           isFading ? "opacity-0" : "opacity-100"
