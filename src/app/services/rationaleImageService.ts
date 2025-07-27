@@ -167,3 +167,42 @@ function base64ToFile(base64Data: string, filename: string): File {
   const blob = new Blob([bytes], { type: mimeType });
   return new File([blob], filename, { type: mimeType });
 }
+
+export async function deleteImageFolder(bucket: string, folderPath: string) {
+  try {
+    const { data: files, error: listError } = await supabase.storage
+      .from(bucket)
+      .list(folderPath, { limit: 100, offset: 0 });
+
+    if (listError) throw listError;
+
+    if (!files || files.length === 0) {
+      console.log("No files found in folder");
+      return;
+    }
+
+    // Recursively delete nested folders if needed
+    const filePaths: string[] = [];
+
+    for (const file of files) {
+      if (file.name && file.metadata?.mimetype) {
+        // It's a file
+        filePaths.push(`${folderPath}/${file.name}`);
+      }
+    }
+
+    if (filePaths.length > 0) {
+      const { error: deleteError } = await supabase.storage
+        .from(bucket)
+        .remove(filePaths);
+
+      if (deleteError) throw deleteError;
+
+      console.log(
+        `Deleted ${filePaths.length} files from folder "${folderPath}"`
+      );
+    }
+  } catch (err) {
+    console.error("Failed to delete folder:", err);
+  }
+}

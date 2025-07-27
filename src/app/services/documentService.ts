@@ -1,4 +1,5 @@
 import { supabase } from "../lib/supabaseClient";
+import { deleteImageFolder } from "./rationaleImageService";
 
 type Document = {
   id?: string;
@@ -69,6 +70,6 @@ export async function updateDocument(id: string, updates: Partial<Document>) {
 
 export async function deleteDocument(id: string) {
   const { error } = await supabase.from("documents").delete().eq("id", id);
-
   if (error) throw error;
+  await deleteImageFolder("rationale-images", id); // Clean up related images
 }
