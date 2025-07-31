@@ -20,6 +20,7 @@ export default function MultipleChoice() {
   const flag = searchParams.get("flag");
   const rationaleFlag = searchParams.get("rationaleFlag");
   const [loading, setLoading] = useState(true);
+  const [score, setScore] = useState(0);
 
   useEffect(() => {
     const fetchAndBuildMultipleChoice = async () => {
@@ -139,6 +140,9 @@ export default function MultipleChoice() {
       isRevealed: true,
     };
     setFlashcards(updatedFlashcards);
+    if (selectedChoice === updatedFlashcards[currentIndex].answer) {
+      setScore((prevScore) => prevScore + 1);
+    }
   };
 
   const handleShuffle = () => {
@@ -189,6 +193,12 @@ export default function MultipleChoice() {
         onQuestionSelect={handleQuestionSelect}
       />
       <div className="fixed top-4 right-4 flex space-x-2">
+        <span className="text-white text-lg flex items-center mx-4">
+          Score: {score} / {flashcards.length}
+        </span>
+        <span className="text-white text-lg flex items-center mx-4">
+          Percentage: {(score / flashcards.length) * 100}%
+        </span>
         <button
           onClick={handleShuffle}
           className="px-4 py-2 text-white rounded-md cursor-pointer hover:scale-125 transition-all focus:outline-none focus:ring-0"

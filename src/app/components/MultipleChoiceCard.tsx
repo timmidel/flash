@@ -20,7 +20,7 @@ const MultipleChoiceCard = ({
   };
 
   return (
-    <div className="bg-gray-800 p-6 rounded-lg shadow-lg text-white">
+    <div className="bg-gray-800 p-6 rounded-lg shadow-lg text-white mt-8">
       <h2 className="md:text-xl md:font-semibold text-lg mb-4">
         {card.question}
       </h2>
