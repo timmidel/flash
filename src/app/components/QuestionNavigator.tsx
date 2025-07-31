@@ -30,41 +30,59 @@ const QuestionNavigator: React.FC<QuestionNavigatorProps> = ({
   };
 
   return (
-    <div
-      className={`fixed left-0 top-1/2 -translate-y-1/2 bg-gray-800 p-4 rounded-r-lg shadow-lg transition-all duration-300 ease-in-out z-10 ${
-        isCollapsed ? "w-16 cursor-pointer" : "w-64"
-      }`}
-      onClick={isCollapsed ? toggleCollapse : undefined}
-    >
-      {isCollapsed ? (
-        <ChevronRight className="w-7 h-7 mx-auto text-white" />
-      ) : (
-        <>
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-white text-lg">Questions</h3>
-            <button
-              onClick={toggleCollapse}
-              className="text-white p-1 rounded-md hover:bg-gray-700 cursor-pointer"
-            >
-              <ChevronLeft className="w-7 h-7" />
-            </button>
-          </div>
-          <div className="grid grid-cols-5 gap-2">
-            {flashcards.map((flashcard, i) => (
-              <div
-                key={i}
-                onClick={() => onQuestionSelect(i)}
-                className={`w-10 h-10 flex items-center justify-center rounded-md cursor-pointer transition-colors ${
-                  currentIndex === i ? "ring-2 ring-purple-500" : ""
-                } ${getIndicatorColor(flashcard)}`}
+    <>
+      <div
+        className={`hidden md:block fixed left-0 top-1/2 -translate-y-1/2 bg-gray-800 p-4 rounded-r-lg shadow-lg transition-all duration-300 ease-in-out z-10 ${
+          isCollapsed ? "w-16 cursor-pointer" : "w-64"
+        }`}
+        onClick={isCollapsed ? toggleCollapse : undefined}
+      >
+        {isCollapsed ? (
+          <ChevronRight className="w-7 h-7 mx-auto text-white" />
+        ) : (
+          <>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-white text-lg">Questions</h3>
+              <button
+                onClick={toggleCollapse}
+                className="text-white p-1 rounded-md hover:bg-gray-700 cursor-pointer"
               >
-                {i + 1}
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
+                <ChevronLeft className="w-7 h-7" />
+              </button>
+            </div>
+            <div className="grid grid-cols-5 gap-2">
+              {flashcards.map((flashcard, i) => (
+                <div
+                  key={i}
+                  onClick={() => onQuestionSelect(i)}
+                  className={`w-10 h-10 flex items-center justify-center rounded-md cursor-pointer transition-colors ${
+                    currentIndex === i ? "ring-2 ring-purple-500" : ""
+                  } ${getIndicatorColor(flashcard)}`}
+                >
+                  {i + 1}
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+      <div className="bg-gray-800 py-5 px-6 rounded-lg shadow-lg mt-4 mb-5 md:hidden w-full">
+        <h3 className="text-white text-lg mb-2">Questions</h3>
+        <div className="grid sm:grid-cols-7 grid-cols-5 gap-2 w-full place-items-center">
+          {flashcards.map((flashcard, i) => (
+            <div
+              key={i}
+              onClick={() => onQuestionSelect(i)}
+              className={`sm:w-15 sm:h-15 w-12 h-12 font-bold flex items-center justify-center rounded-md cursor-pointer transition-colors ${
+                currentIndex === i ? "ring-2 ring-purple-500" : ""
+              } ${getIndicatorColor(flashcard)}`}
+            >
+              {i + 1}
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
   );
 };
 

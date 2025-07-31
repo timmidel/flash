@@ -172,11 +172,6 @@ export default function MultipleChoice() {
 
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center relative pt-10 pb-20">
-      <QuestionNavigator
-        flashcards={flashcards}
-        currentIndex={currentIndex}
-        onQuestionSelect={handleQuestionSelect}
-      />
       <div
         className={`w-full max-w-2xl transition-opacity duration-300 ${
           isFading ? "opacity-0" : "opacity-100"
@@ -188,6 +183,11 @@ export default function MultipleChoice() {
           showRationale={showRationale}
         />
       </div>
+      <QuestionNavigator
+        flashcards={flashcards}
+        currentIndex={currentIndex}
+        onQuestionSelect={handleQuestionSelect}
+      />
       <div className="fixed top-4 right-4 flex space-x-2">
         <button
           onClick={handleShuffle}
