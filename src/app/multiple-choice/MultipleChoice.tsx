@@ -8,6 +8,7 @@ import { Shuffle, Eye, EyeOff } from "lucide-react";
 import { getDocumentById } from "../services/documentService";
 import { getRationaleImageByDocument } from "../services/rationaleImageService";
 import Spinner from "../components/Spinner";
+import QuestionNavigator from "../components/QuestionNavigator";
 
 export default function MultipleChoice() {
   const context = useContext(FlashcardContext);
@@ -147,6 +148,14 @@ export default function MultipleChoice() {
     setCurrentIndex(0);
   };
 
+  const handleQuestionSelect = (index: number) => {
+    setIsFading(true);
+    setTimeout(() => {
+      setCurrentIndex(index);
+      setIsFading(false);
+    }, 150);
+  };
+
   if (loading) {
     return <Spinner />;
   }
@@ -163,6 +172,11 @@ export default function MultipleChoice() {
 
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center relative pt-10 pb-20">
+      <QuestionNavigator
+        flashcards={flashcards}
+        currentIndex={currentIndex}
+        onQuestionSelect={handleQuestionSelect}
+      />
       <div
         className={`w-full max-w-2xl transition-opacity duration-300 ${
           isFading ? "opacity-0" : "opacity-100"
