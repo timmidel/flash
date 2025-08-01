@@ -3,15 +3,15 @@ import { supabase } from "../lib/supabaseClient";
 export const createFolder = async ({
   name,
   user_id,
-  parent_folder_id = null,
+  parent_id = null,
 }: {
   name: string;
   user_id: string;
-  parent_folder_id?: string | null;
+  parent_id?: string | null;
 }) => {
   const { data, error } = await supabase
     .from("folders")
-    .insert([{ name, user_id, parent_folder_id }])
+    .insert([{ name, user_id, parent_id }])
     .select()
     .single();
 

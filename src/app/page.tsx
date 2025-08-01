@@ -19,6 +19,7 @@ import {
   extractImages,
 } from "./services/rationaleImageService";
 import Spinner from "./components/Spinner";
+import Sidebar from "./components/Sidebar";
 
 type Document = {
   id: string;
@@ -411,10 +412,17 @@ export default function Home() {
           </div>
         </div>
         <Toaster position="top-right" />
+        <div className="relative group">
+          {/* Sidebar */}
+          <div className="fixed top-1/2 left-0 transform -translate-y-1/2 w-0.5 h-full bg-transparent rounded-r-md z-50" />
+          <div className="fixed top-1/2 left-0 transform -translate-y-1/2 w-2 h-16 bg-gradient-to-r from-purple-700 via-purple-500 to-purple-700 animate-pulse rounded-r-md z-50" />
+          <Sidebar userId={user.id} />
+        </div>
         <DeleteConfirmationModal
           isOpen={isModalOpen}
           onClose={closeModal}
           onConfirm={confirmDelete}
+          message="Are you sure you want to delete this document?"
         />
         <QuizTypeSelectionModal
           isOpen={isQuizTypeModalOpen}
