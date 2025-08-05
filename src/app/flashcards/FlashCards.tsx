@@ -33,12 +33,13 @@ export default function Flashcards() {
             const itemData = await getQuestionsByDocument(docId);
             const newFlashcards: Flashcard[] = itemData.map(
               (q: Question, index: number) => ({
+                id: q.id || "",
                 question: q.question_text,
                 choices: q.choices ?? [],
                 answer: q.answer,
                 rationale: q.rationale ?? "",
                 selectedAnswer: q.selected_answer ?? "",
-                isRevealed: false,
+                isRevealed: q.selected_answer ? true : false,
                 rationaleImage:
                   rationaleImages.find((img) => img.rationale_index === index)
                     ?.image_url_url || "",

@@ -4,12 +4,15 @@ import { useContext, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { FlashcardContext, Flashcard } from "../context/FlashcardContext";
 import MultipleChoiceCard from "../components/MultipleChoiceCard";
-import { Shuffle, Eye, EyeOff } from "lucide-react";
+import { Shuffle, Eye, EyeOff, RotateCcw } from "lucide-react";
 import { getDocumentById } from "../services/documentService";
 import { getRationaleImageByDocument } from "../services/rationaleImageService";
 import Spinner from "../components/Spinner";
 import QuestionNavigator from "../components/QuestionNavigator";
-import { getQuestionsByDocument } from "../services/questionService";
+import {
+  getQuestionsByDocument,
+  updateQuestions,
+} from "../services/questionService";
 import { Question } from "../types/item";
 
 export default function MultipleChoice() {
@@ -34,12 +37,13 @@ export default function MultipleChoice() {
             const itemData = await getQuestionsByDocument(docId);
             const newFlashcards: Flashcard[] = itemData.map(
               (q: Question, index: number) => ({
+                id: q.id || "",
                 question: q.question_text,
                 choices: q.choices ?? [],
                 answer: q.answer,
                 rationale: q.rationale ?? "",
                 selectedAnswer: q.selected_answer ?? "",
-                isRevealed: false,
+                isRevealed: q.selected_answer ? true : false,
                 rationaleImage:
                   rationaleImages.find((img) => img.rationale_index === index)
                     ?.image_url || "",
@@ -107,13 +111,21 @@ export default function MultipleChoice() {
     }, 150);
   };
 
-  const handleChoiceSelected = (selectedChoice: string) => {
+  const handleChoiceSelected = async (selectedChoice: string) => {
     const updatedFlashcards = [...flashcards];
     updatedFlashcards[currentIndex] = {
       ...updatedFlashcards[currentIndex],
       selectedAnswer: selectedChoice,
       isRevealed: true,
     };
+    try {
+      updateQuestions([updatedFlashcards[currentIndex].id], {
+        selected_answer: selectedChoice,
+      });
+    } catch (error) {
+      console.error("Error updating choice:", error);
+    }
+
     setFlashcards(updatedFlashcards);
     if (selectedChoice === updatedFlashcards[currentIndex].answer) {
       setScore((prevScore) => prevScore + 1);
@@ -126,6 +138,29 @@ export default function MultipleChoice() {
     const shuffledFlashcards = [...flashcards].sort(() => Math.random() - 0.5);
     setFlashcards(shuffledFlashcards);
     setCurrentIndex(0);
+  };
+
+  const handleReset = async () => {
+    if (flashcards.length === 0) return;
+    const flashcardIds = flashcards.map((card) => card.id);
+    try {
+      const updatedQuestions = await updateQuestions(flashcardIds, {
+        selected_answer: "",
+      });
+      if (updatedQuestions) {
+        const resetFlashcards = flashcards.map((card) => ({
+          ...card,
+          selectedAnswer: "",
+          isRevealed: false,
+        }));
+        setFlashcards(resetFlashcards);
+        setScore(0);
+        setAnswersCount(0);
+        setCurrentIndex(0);
+      }
+    } catch (error) {
+      console.error("Error resetting questions:", error);
+    }
   };
 
   const handleQuestionSelect = (index: number) => {
@@ -169,28 +204,34 @@ export default function MultipleChoice() {
         onQuestionSelect={handleQuestionSelect}
       />
       <div className="fixed top-4 right-4 flex space-x-2">
-        <span className="text-white text-lg flex items-center mx-4">
-          Score: {score} / {answersCount}
+        <span className="text-white text-md flex items-center mx-4">
+          Score: {Number(score)} / {answersCount}
         </span>
-        <span className="text-white text-lg flex items-center mx-4">
-          Percentage: {(score / answersCount || 0) * 100}%
+        <span className="text-white text-md flex items-center mx-4">
+          Percentage: {((score / answersCount || 0) * 100).toFixed(2)}%
         </span>
         <button
-          onClick={handleShuffle}
-          className="px-4 py-2 text-white rounded-md cursor-pointer hover:scale-125 transition-all focus:outline-none focus:ring-0"
+          onClick={handleReset}
+          className="px-3 py-2 text-white rounded-md cursor-pointer hover:scale-125 transition-all focus:outline-none focus:ring-0"
         >
-          <Shuffle className="w-9 h-9" />
+          <RotateCcw className="w-8 h-8" />
+        </button>
+        <button
+          onClick={handleShuffle}
+          className="px-3 py-2 text-white rounded-md cursor-pointer hover:scale-125 transition-all focus:outline-none focus:ring-0"
+        >
+          <Shuffle className="w-8 h-8" />
         </button>
         {(flashcards[currentIndex]?.rationale ||
           flashcards[currentIndex]?.rationaleImage) && (
           <button
             onClick={() => setShowRationale(!showRationale)}
-            className="px-4 py-2 text-white rounded-md cursor-pointer hover:scale-125 transition-all focus:outline-none focus:ring-0"
+            className="px-3 py-2 text-white rounded-md cursor-pointer hover:scale-125 transition-all focus:outline-none focus:ring-0"
           >
             {showRationale ? (
-              <Eye className="w-9 h-9" />
+              <Eye className="w-8 h-8" />
             ) : (
-              <EyeOff className="w-9 h-9" />
+              <EyeOff className="w-8 h-8" />
             )}
           </button>
         )}

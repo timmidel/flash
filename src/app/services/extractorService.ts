@@ -1,7 +1,7 @@
 import * as cheerio from "cheerio";
 import { convert } from "html-to-text";
 import { Choice, Question } from "../types/item";
-import { createQuestion, updateQuestion } from "./questionService";
+import { createQuestion, updateQuestions } from "./questionService";
 import { createChoices } from "./choiceService";
 
 const convertNestedOlToParagraphs = (html: string): string => {
@@ -107,7 +107,7 @@ export async function saveItemData(
         const rationale = parts[1]?.trim();
 
         if (lastQuestionId && rationale) {
-          await updateQuestion(lastQuestionId, { rationale });
+          await updateQuestions([lastQuestionId], { rationale });
           console.log("Updated question rationale");
         }
       } else if (trimmedLine) {

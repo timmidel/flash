@@ -3,6 +3,7 @@
 import { createContext, useState, ReactNode } from "react";
 import { Choice } from "../types/item";
 export interface Flashcard {
+  id: string;
   question: string;
   choices: Choice[];
   answer: string;

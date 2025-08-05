@@ -54,13 +54,15 @@ export async function getQuestionById(id: string) {
 }
 
 // Update a question
-export async function updateQuestion(id: string, updates: Partial<Question>) {
+export async function updateQuestions(
+  ids: string[],
+  updates: Partial<Question>
+) {
   const { data, error } = await supabase
     .from("questions")
     .update(updates)
-    .eq("id", id)
-    .select()
-    .single();
+    .in("id", ids)
+    .select();
 
   if (error) throw error;
   return data;
