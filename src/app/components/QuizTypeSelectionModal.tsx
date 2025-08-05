@@ -6,35 +6,23 @@ type QuizTypeSelectionModalProps = {
   isOpen: boolean;
   onClose: () => void;
   docId: string | null;
-  flag: string | null;
-  rationaleFlag: string | null;
 };
 
 const QuizTypeSelectionModal = ({
   isOpen,
   onClose,
   docId,
-  flag,
-  rationaleFlag,
 }: QuizTypeSelectionModalProps) => {
   const router = useRouter();
 
   if (!isOpen) return null;
 
   const handleSelectQuizType = (type: "classic" | "multiple-choice") => {
-    if (docId && flag) {
+    if (docId) {
       if (type === "classic") {
-        router.push(
-          `/flashcards?docId=${docId}&flag=${encodeURIComponent(
-            flag
-          )}&rationaleFlag=${encodeURIComponent(rationaleFlag || "")}`
-        );
+        router.push(`/flashcards?docId=${docId}`);
       } else {
-        router.push(
-          `/multiple-choice?docId=${docId}&flag=${encodeURIComponent(
-            flag
-          )}&rationaleFlag=${encodeURIComponent(rationaleFlag || "")}`
-        );
+        router.push(`/multiple-choice?docId=${docId}`);
       }
     }
   };

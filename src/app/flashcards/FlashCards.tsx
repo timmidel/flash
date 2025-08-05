@@ -8,6 +8,8 @@ import FlashcardComponent from "../components/Flashcard";
 import { getDocumentById } from "../services/documentService";
 import { getRationaleImageByDocument } from "../services/rationaleImageService";
 import Spinner from "../components/Spinner";
+import { getQuestionsByDocument } from "../services/questionService";
+import { Question } from "../types/item";
 
 export default function Flashcards() {
   const context = useContext(FlashcardContext);
@@ -23,51 +25,33 @@ export default function Flashcards() {
 
   useEffect(() => {
     const fetchAndBuildFlashcards = async () => {
-      if (docId && flag && context) {
+      if (docId && context) {
         try {
           const document = await getDocumentById(docId);
           const rationaleImages = await getRationaleImageByDocument(docId);
           if (document) {
-            const lines = document.content.split("\n");
-            const newFlashcards: Flashcard[] = [];
-            let currentQuestion = "";
-            let rationaleIndex = 0;
-
-            for (const line of lines) {
-              if (line.includes(flag)) {
-                const parts = line.split(flag);
-                const question = currentQuestion.trim();
-                const answer = parts[1].trim();
-                if (question) {
-                  newFlashcards.push({
-                    question,
-                    answer,
-                    rationale: "", // Initialize empty, will be filled later
-                  });
-                }
-                currentQuestion = "";
-              } else if (rationaleFlag && line.includes(rationaleFlag)) {
-                const parts = line.split(rationaleFlag);
-                const rationaleImageWithIndex = rationaleImages.find(
-                  (img) => img.rationale_index === rationaleIndex
-                );
-                // Apply to the last created flashcard
-                if (rationaleImageWithIndex && newFlashcards.length > 0)
-                  newFlashcards[newFlashcards.length - 1].rationaleImage =
-                    rationaleImageWithIndex.image_url;
-                else if (newFlashcards.length > 0)
-                  newFlashcards[newFlashcards.length - 1].rationale =
-                    parts[1].trim();
-                rationaleIndex++;
-              } else if (line.trim()) {
-                // Only add non-empty lines
-                currentQuestion += line + "\n";
-              }
-            }
+            const itemData = await getQuestionsByDocument(docId);
+            const newFlashcards: Flashcard[] = itemData.map(
+              (q: Question, index: number) => ({
+                question: q.question_text,
+                choices: q.choices ?? [],
+                answer: q.answer,
+                rationale: q.rationale ?? "",
+                selectedAnswer: q.selected_answer ?? "",
+                isRevealed: false,
+                rationaleImage:
+                  rationaleImages.find((img) => img.rationale_index === index)
+                    ?.image_url_url || "",
+              })
+            );
+            console.log("New Flashcards:", newFlashcards);
             context.setFlashcards(newFlashcards);
           }
         } catch (error) {
-          console.error("Error fetching or building flashcards:", error);
+          console.error(
+            "Error fetching or building multiple choice questions:",
+            error
+          );
         } finally {
           setLoading(false);
         }
@@ -132,7 +116,7 @@ export default function Flashcards() {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <p className="text-white text-2xl">
-          No flashcards available. Please generate them first.
+          No flashcards available or invalid document format.
         </p>
       </div>
     );

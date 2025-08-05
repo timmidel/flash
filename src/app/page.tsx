@@ -20,6 +20,7 @@ import {
 } from "./services/rationaleImageService";
 import Spinner from "./components/Spinner";
 import Sidebar from "./components/Sidebar";
+import { preprocessHtml, saveItemData } from "./services/extractorService";
 
 type Document = {
   id: string;
@@ -35,7 +36,6 @@ export default function Home() {
   const [rationaleFlag, setRationaleFlag] = useState("Rationale:");
   const [dragged, setDragged] =
     useState<React.DragEvent<HTMLDivElement> | null>(null);
-  const [quizType, setQuizType] = useState("classic");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const router = useRouter();
   const [user, setUser] = useState<User | null | undefined>(undefined); // Add 'undefined' for loading state
@@ -46,11 +46,8 @@ export default function Home() {
   const [selectedDocIdForQuiz, setSelectedDocIdForQuiz] = useState<
     string | null
   >(null);
-  const [selectedDocFlagForQuiz, setSelectedDocFlagForQuiz] = useState<
-    string | null
-  >(null);
-  const [selectedDocRationaleFlagForQuiz, setSelectedDocRationaleFlagForQuiz] =
-    useState<string | null>(null);
+
+  useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -179,22 +176,15 @@ export default function Home() {
         }
       }
       if (newDoc) {
-        if (quizType === "classic") {
-          router.push(
-            `/flashcards?docId=${newDoc.id}&flag=${encodeURIComponent(
-              flag
-            )}&rationaleFlag=${encodeURIComponent(rationaleFlag)}`
-          );
-        } else {
-          router.push(
-            `/multiple-choice?docId=${newDoc.id}&flag=${encodeURIComponent(
-              flag
-            )}&rationaleFlag=${encodeURIComponent(rationaleFlag)}`
-          );
-        }
+        await saveItemData(newDoc.id, content, flag, rationaleFlag);
+        toast.success("Document saved successfully.");
+        setFile(null);
+        await fetchDocuments();
       }
     } catch (error) {
       toast.error("Failed to save document." + error);
+    } finally {
+      setGenerating(false);
     }
   };
 
@@ -208,10 +198,9 @@ export default function Home() {
     reader.onload = async (e) => {
       if (e.target?.result) {
         const arrayBuffer = e.target.result as ArrayBuffer;
-        const result = await mammoth.extractRawText({ arrayBuffer });
-        const text = result.value;
-        await saveDocument(text, arrayBuffer);
-        setGenerating(false);
+        const html = await mammoth.convertToHtml({ arrayBuffer });
+        const preprocessedText = preprocessHtml(html.value);
+        await saveDocument(preprocessedText, arrayBuffer);
       }
     };
     reader.readAsArrayBuffer(file);
@@ -245,14 +234,10 @@ export default function Home() {
 
   const handleDocumentClick = (doc: Document) => {
     setSelectedDocIdForQuiz(doc.id);
-    setSelectedDocFlagForQuiz(doc.answer_flag);
-    setSelectedDocRationaleFlagForQuiz(doc.rationale_flag || null);
     setIsQuizTypeModalOpen(true);
   };
 
-  return generating ? (
-    <Spinner>Generating...</Spinner>
-  ) : loading ? (
+  return loading ? (
     <Spinner />
   ) : (
     user && (
@@ -354,32 +339,18 @@ export default function Home() {
                 />
               </div>
             </div>
-            <div>
-              <label
-                htmlFor="quiz-type"
-                className="block text-sm font-medium text-gray-300 mt-4"
-              >
-                Quiz Type
-              </label>
-              <div className="mt-1">
-                <select
-                  id="quiz-type"
-                  name="quiz-type"
-                  value={quizType}
-                  onChange={(e) => setQuizType(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
-                >
-                  <option value="classic">Classic Flashcards</option>
-                  <option value="multiple-choice">Multiple Choice</option>
-                </select>
-              </div>
-            </div>
+
             <div>
               <button
                 onClick={generateFlashcards}
-                className="w-full flex justify-center cursor-pointer py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 mt-4"
+                disabled={generating}
+                className={`w-full flex justify-center cursor-pointer py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
+                  generating
+                    ? "bg-gray-500"
+                    : "bg-purple-600 hover:bg-purple-700"
+                } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 mt-4`}
               >
-                Generate
+                {generating ? "Generating..." : "Generate"}
               </button>
             </div>
           </div>
@@ -414,7 +385,7 @@ export default function Home() {
         <Toaster position="top-right" />
         <div className="relative group">
           {/* Sidebar */}
-          <div className="fixed top-1/2 left-0 transform -translate-y-1/2 w-0.5 h-full bg-transparent rounded-r-md z-50" />
+          <div className="fixed top-1/2 left-0 transform -translate-y-1/2 w-10 h-full bg-transparent rounded-r-md z-50" />
           <div className="fixed top-1/2 left-0 transform -translate-y-1/2 w-2 h-16 bg-gradient-to-r from-purple-700 via-purple-500 to-purple-700 animate-pulse rounded-r-md z-50" />
           <Sidebar userId={user.id} />
         </div>
@@ -428,8 +399,6 @@ export default function Home() {
           isOpen={isQuizTypeModalOpen}
           onClose={() => setIsQuizTypeModalOpen(false)}
           docId={selectedDocIdForQuiz}
-          flag={selectedDocFlagForQuiz}
-          rationaleFlag={selectedDocRationaleFlagForQuiz}
         />
       </div>
     )

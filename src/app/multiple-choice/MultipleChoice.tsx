@@ -9,6 +9,8 @@ import { getDocumentById } from "../services/documentService";
 import { getRationaleImageByDocument } from "../services/rationaleImageService";
 import Spinner from "../components/Spinner";
 import QuestionNavigator from "../components/QuestionNavigator";
+import { getQuestionsByDocument } from "../services/questionService";
+import { Question } from "../types/item";
 
 export default function MultipleChoice() {
   const context = useContext(FlashcardContext);
@@ -17,69 +19,32 @@ export default function MultipleChoice() {
   const [showRationale, setShowRationale] = useState(false);
   const searchParams = useSearchParams();
   const docId = searchParams.get("docId");
-  const flag = searchParams.get("flag");
-  const rationaleFlag = searchParams.get("rationaleFlag");
+
   const [loading, setLoading] = useState(true);
   const [score, setScore] = useState(0);
 
   useEffect(() => {
     const fetchAndBuildMultipleChoice = async () => {
-      if (docId && flag && context) {
+      if (docId && context) {
         try {
           const document = await getDocumentById(docId);
           const rationaleImages = await getRationaleImageByDocument(docId);
           if (document) {
-            const lines = document.content.split("\n");
-            const newFlashcards: Flashcard[] = [];
-            const existingFlashcards = context.flashcards;
-            let currentQuestion = "";
-            let rationaleIndex = 0;
-            let choices: { letter: string; text: string }[] = [];
-            let lastFlashcardIndex = -1;
-
-            for (const line of lines) {
-              if (line.match(/^[A-Z]\./)) {
-                const letter = line.charAt(0);
-                const choiceText = line.substring(2).trim();
-                choices.push({ letter, text: choiceText });
-              } else if (line.includes(flag)) {
-                const answer = line.split(flag)[1].trim().replace(".", "");
-                if (currentQuestion && choices.length > 0) {
-                  const newCard: Flashcard = {
-                    question: currentQuestion,
-                    choices,
-                    answer,
-                    rationale: "",
-                  };
-                  const existingCard = existingFlashcards.find(
-                    (card) => card.question === newCard.question
-                  );
-                  if (existingCard) {
-                    newCard.selectedAnswer = existingCard.selectedAnswer;
-                    newCard.isRevealed = existingCard.isRevealed;
-                  }
-                  newFlashcards.push(newCard);
-                  lastFlashcardIndex = newFlashcards.length - 1;
-                }
-                currentQuestion = "";
-                choices = [];
-              } else if (rationaleFlag && line.includes(rationaleFlag)) {
-                const parts = line.split(rationaleFlag);
-                const rationaleImageWithIndex = rationaleImages.find(
-                  (img) => img.rationale_index === rationaleIndex
-                );
-                const rationale = parts[1].trim();
-                if (lastFlashcardIndex !== -1 && rationaleImageWithIndex) {
-                  newFlashcards[newFlashcards.length - 1].rationaleImage =
-                    rationaleImageWithIndex.image_url;
-                } else if (lastFlashcardIndex !== -1) {
-                  newFlashcards[lastFlashcardIndex].rationale = rationale;
-                }
-                rationaleIndex++;
-              } else if (line.trim()) {
-                currentQuestion += line + "\n";
-              }
-            }
+            const itemData = await getQuestionsByDocument(docId);
+            const newFlashcards: Flashcard[] = itemData.map(
+              (q: Question, index: number) => ({
+                question: q.question_text,
+                choices: q.choices ?? [],
+                answer: q.answer,
+                rationale: q.rationale ?? "",
+                selectedAnswer: q.selected_answer ?? "",
+                isRevealed: false,
+                rationaleImage:
+                  rationaleImages.find((img) => img.rationale_index === index)
+                    ?.image_url || "",
+              })
+            );
+            console.log("New Flashcards:", newFlashcards);
             context.setFlashcards(newFlashcards);
           }
         } catch (error) {
@@ -93,7 +58,7 @@ export default function MultipleChoice() {
       }
     };
     fetchAndBuildMultipleChoice();
-  }, [docId, flag, rationaleFlag]);
+  }, [docId]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -168,7 +133,7 @@ export default function MultipleChoice() {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <p className="text-white text-2xl">
-          No multiple choice questions available. Please generate them first.
+          No multiple choice questions available or invalid document format.
         </p>
       </div>
     );

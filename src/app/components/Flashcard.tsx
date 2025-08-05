@@ -44,9 +44,14 @@ export default function FlashcardComponent({
       {/* Front and Back Sizing Measurement */}
       <div className="absolute opacity-0 pointer-events-none w-full">
         <div ref={frontRef} className="p-6 flex items-center justify-center">
-          <p className="md:text-xl text-lg text-gray-200 whitespace-pre-wrap text-center">
+          <p className="md:text-2xl text-lg text-gray-200 whitespace-pre-wrap mt-5">
             {flashcard.question}
           </p>
+          {flashcard.choices.map((choice, index) => (
+            <p key={index} className="text-sm text-gray-400 mt-2">
+              {choice.letter}. {choice.text}
+            </p>
+          ))}
         </div>
         <div ref={backRef} className="p-6 flex flex-col space-y-4">
           <p className="text-2xl text-gray-200 whitespace-pre-wrap">
@@ -79,6 +84,14 @@ export default function FlashcardComponent({
         >
           <p className="md:text-2xl text-lg text-gray-200 whitespace-pre-wrap">
             {flashcard.question}
+            {flashcard.choices.map((choice, index) => (
+              <p
+                key={index}
+                className="md:text-2xl text-lg text-gray-200 whitespace-pre-wrap mt-5"
+              >
+                {choice.letter}. {choice.text}
+              </p>
+            ))}
           </p>
         </div>
 

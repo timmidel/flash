@@ -21,7 +21,7 @@ const MultipleChoiceCard = ({
 
   return (
     <div className="bg-gray-800 p-6 rounded-lg shadow-lg text-white mt-8">
-      <h2 className="md:text-xl md:font-semibold text-lg mb-4">
+      <h2 className="md:text-xl md:font-semibold text-lg mb-4 whitespace-pre-wrap">
         {card.question}
       </h2>
       <div className="space-y-2">

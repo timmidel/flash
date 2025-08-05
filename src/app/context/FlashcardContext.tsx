@@ -1,15 +1,15 @@
 "use client";
 
 import { createContext, useState, ReactNode } from "react";
-
+import { Choice } from "../types/item";
 export interface Flashcard {
   question: string;
+  choices: Choice[];
   answer: string;
   rationale?: string;
-  choices?: { letter: string; text: string }[];
-  rationaleImage?: string;
-  selectedAnswer?: string | null;
+  selectedAnswer?: string;
   isRevealed?: boolean;
+  rationaleImage?: string;
 }
 
 interface FlashcardContextType {
