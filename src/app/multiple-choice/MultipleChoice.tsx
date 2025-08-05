@@ -22,6 +22,7 @@ export default function MultipleChoice() {
 
   const [loading, setLoading] = useState(true);
   const [score, setScore] = useState(0);
+  const [answersCount, setAnswersCount] = useState(0);
 
   useEffect(() => {
     const fetchAndBuildMultipleChoice = async () => {
@@ -44,6 +45,15 @@ export default function MultipleChoice() {
                     ?.image_url || "",
               })
             );
+            const correctCount = newFlashcards.filter(
+              (card) =>
+                card.selectedAnswer && card.selectedAnswer === card.answer
+            ).length;
+            const answeredCount = newFlashcards.filter(
+              (card) => card.selectedAnswer
+            ).length;
+            setScore(correctCount);
+            setAnswersCount(answeredCount);
             console.log("New Flashcards:", newFlashcards);
             context.setFlashcards(newFlashcards);
           }
@@ -108,6 +118,7 @@ export default function MultipleChoice() {
     if (selectedChoice === updatedFlashcards[currentIndex].answer) {
       setScore((prevScore) => prevScore + 1);
     }
+    setAnswersCount((prevCount) => prevCount + 1);
   };
 
   const handleShuffle = () => {
@@ -159,10 +170,10 @@ export default function MultipleChoice() {
       />
       <div className="fixed top-4 right-4 flex space-x-2">
         <span className="text-white text-lg flex items-center mx-4">
-          Score: {score} / {flashcards.length}
+          Score: {score} / {answersCount}
         </span>
         <span className="text-white text-lg flex items-center mx-4">
-          Percentage: {(score / flashcards.length) * 100}%
+          Percentage: {(score / answersCount || 0) * 100}%
         </span>
         <button
           onClick={handleShuffle}
