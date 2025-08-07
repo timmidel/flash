@@ -7,6 +7,7 @@ import {
   deleteFolder,
 } from "../services/folderService";
 import toast from "react-hot-toast";
+import KebabMenu from "./KebabMenu";
 
 interface Folder {
   id: string;
@@ -65,6 +66,11 @@ export default function Sidebar({ userId }: SidebarProps) {
     }
   };
 
+  const handleMove = (id: string) => {
+    console.log("Move folder:", id);
+    toast.success("Move functionality to be implemented.");
+  };
+
   return (
     <div className="fixed top-0 left-0 h-screen transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300 bg-gray-900 text-white p-4 space-y-6 shadow-lg overflow-y-auto z-50 border-2 border-gray-800">
       <h2 className="text-xl font-bold mb-2">📁 My Folders</h2>
@@ -80,24 +86,26 @@ export default function Sidebar({ userId }: SidebarProps) {
         <button
           onClick={handleCreateFolder}
           disabled={loading}
-          className="bg-purple-600 hover:bg-purple-700 px-3 py-1 rounded text-sm"
+          className={
+            loading
+              ? "bg-gray-700 text-gray-300 px-3 py-1 rounded text-sm cursor-pointer"
+              : " bg-purple-600 hover:bg-purple-700 px-3 py-1 rounded text-sm cursor-pointer"
+          }
         >
-          {loading ? "..." : "Add"}
+          Add
         </button>
       </div>
       <ul className="space-y-2">
         {folders.map((folder) => (
           <li
             key={folder.id}
-            className="flex justify-between items-center bg-gray-800 p-2 rounded"
+            className="flex justify-between items-center bg-gray-800 px-2 rounded"
           >
             <span>{folder.name}</span>
-            <button
-              onClick={() => handleDelete(folder.id)}
-              className="text-red-400 hover:text-red-600 text-sm"
-            >
-              ✕
-            </button>
+            <KebabMenu
+              onDelete={() => handleDelete(folder.id)}
+              onMove={() => handleMove(folder.id)}
+            />
           </li>
         ))}
       </ul>
