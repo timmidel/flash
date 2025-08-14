@@ -21,14 +21,8 @@ import {
 import Spinner from "./components/Spinner";
 import Sidebar from "./components/Sidebar";
 import { preprocessHtml, saveItemData } from "./services/extractorService";
-
-type Document = {
-  id: string;
-  title: string;
-  content: string;
-  answer_flag: string;
-  rationale_flag?: string;
-};
+import { Folder } from "./types/folder";
+import { Document } from "./types/document";
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
@@ -46,8 +40,7 @@ export default function Home() {
   const [selectedDocIdForQuiz, setSelectedDocIdForQuiz] = useState<
     string | null
   >(null);
-
-  useState<string | null>(null);
+  const [currentFolder, setCurrentFolder] = useState<Folder | null>(null);
   const [generating, setGenerating] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -83,7 +76,10 @@ export default function Home() {
   const fetchDocuments = async () => {
     if (!user) return;
     try {
-      const userDocuments = await getDocumentsByUser(user.id);
+      const userDocuments = await getDocumentsByUser(
+        user.id,
+        currentFolder?.id || null
+      );
       setDocuments(userDocuments || []);
     } catch (error) {
       console.log("Error fetching documents:", error);
@@ -154,7 +150,7 @@ export default function Home() {
         content,
         answer_flag: flag,
         rationale_flag: rationaleFlag,
-        folder_id: null,
+        folder_id: currentFolder?.id || null,
         user_id: user?.id,
       });
       console.log("Created:", newDoc);
@@ -387,7 +383,11 @@ export default function Home() {
           {/* Sidebar */}
           <div className="fixed top-1/2 left-0 transform -translate-y-1/2 w-10 h-full bg-transparent rounded-r-md z-50" />
           <div className="fixed top-1/2 left-0 transform -translate-y-1/2 w-2 h-16 bg-gradient-to-r from-purple-700 via-purple-500 to-purple-700 animate-pulse rounded-r-md z-50" />
-          <Sidebar userId={user.id} />
+          <Sidebar
+            userId={user.id}
+            currentFolder={currentFolder}
+            setCurrentFolder={setCurrentFolder}
+          />
         </div>
         <DeleteConfirmationModal
           isOpen={isModalOpen}

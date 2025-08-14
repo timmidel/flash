@@ -23,13 +23,23 @@ export async function createDocument(doc: Omit<Document, "id" | "created_at">) {
   return data;
 }
 
-export async function getDocumentsByUser(userId: string) {
-  const { data, error } = await supabase
+export async function getDocumentsByUser(
+  userId: string,
+  folderId: string | null = null
+) {
+  let query = supabase
     .from("documents")
     .select("*")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
+  if (folderId) {
+    query = query.eq("folder_id", folderId);
+  } else {
+    query = query.is("folder_id", null);
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
   return data;
 }
