@@ -19,8 +19,11 @@ export default function KebabMenu({ onDelete, onMove }: KebabMenuProps) {
       <div>
         <button
           type="button"
-          className="inline-flex justify-center w-full rounded-md p-2 bg-gray-800 text-xl font-medium text-white focus:outline-none focus:ring-0 cursor-pointer"
-          onClick={toggleMenu}
+          className="inline-flex justify-center w-full rounded-md p-2  text-xl font-medium text-white focus:outline-none focus:ring-0 cursor-pointer"
+          onClick={(e) => {
+            e.stopPropagation(); // prevents the click from reaching <li>
+            toggleMenu();
+          }}
         >
           ⋮
         </button>
@@ -35,7 +38,8 @@ export default function KebabMenu({ onDelete, onMove }: KebabMenuProps) {
             aria-labelledby="options-menu"
           >
             <button
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation(); // prevents the click from reaching <li>
                 onMove();
                 setIsOpen(false);
               }}
@@ -45,7 +49,8 @@ export default function KebabMenu({ onDelete, onMove }: KebabMenuProps) {
               Move
             </button>
             <button
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation(); // prevents the click from reaching <li>
                 onDelete();
                 setIsOpen(false);
               }}

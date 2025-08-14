@@ -19,13 +19,21 @@ export const createFolder = async ({
   return data;
 };
 
-export const getFoldersByUser = async (user_id: string) => {
-  const { data, error } = await supabase
+export const getFoldersByUser = async (
+  user_id: string,
+  parent_id: string | null
+) => {
+  let query = supabase
     .from("folders")
     .select("*")
     .eq("user_id", user_id)
     .order("created_at", { ascending: false });
-
+  if (parent_id) {
+    query = query.eq("parent_id", parent_id);
+  } else {
+    query = query.is("parent_id", null); // root folders
+  }
+  const { data, error } = await query;
   if (error) throw error;
   return data;
 };
