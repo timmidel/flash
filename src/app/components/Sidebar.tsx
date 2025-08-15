@@ -323,7 +323,7 @@ export default function Sidebar({
   };
 
   return (
-    <div className="fixed top-0 left-0 h-screen transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300 bg-gray-900 text-white space-y-6 shadow-lg overflow-y-auto z-50 border-2 border-gray-800">
+    <div className="h-screen bg-gray-900 text-white space-y-6 shadow-lg overflow-y-auto z-50 border-2 border-gray-800">
       {currentFolder ? (
         <DroppableParentFolder onDropInside={handleDropInside} />
       ) : (
@@ -342,8 +342,8 @@ export default function Sidebar({
           disabled={loading}
           className={
             loading
-              ? "bg-gray-700 text-gray-300 px-3 py-1 rounded text-sm cursor-pointer"
-              : " bg-purple-600 hover:bg-purple-700 px-3 py-1 rounded text-sm cursor-pointer"
+              ? "bg-gray-700 text-gray-300 px-3 py-1 rounded text-sm cursor-pointer w-full"
+              : " bg-purple-600 hover:bg-purple-700 px-3 py-1 rounded text-sm cursor-pointer w-full"
           }
         >
           Add
