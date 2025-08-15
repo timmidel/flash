@@ -17,7 +17,7 @@ import {
   getDocumentsByUser,
   updateDocument,
 } from "../services/documentService";
-import { useDrag, useDrop } from "react-dnd";
+import { useDrag, useDrop, useDragLayer } from "react-dnd";
 
 interface SidebarProps {
   userId: string;
@@ -322,6 +322,44 @@ export default function Sidebar({
     console.log("Dropped item:", item, "into folder:", targetFolderId);
   };
 
+  function CustomDragLayer() {
+    const { isDragging, item, currentOffset } = useDragLayer((monitor) => ({
+      isDragging: monitor.isDragging(),
+      item: monitor.getItem(),
+      currentOffset: monitor.getSourceClientOffset(),
+    }));
+    let name = "";
+    if (item) {
+      if (item.type === ItemTypes.FOLDER) {
+        const folder = folders.find((f) => f.id === item.id);
+        name = folder ? folder.name : "Unknown Folder";
+      } else if (item.type === ItemTypes.FILE) {
+        const file = documents.find((d) => d.id === item.id);
+        name = file ? file.title : "Unknown File";
+      }
+    }
+
+    if (!isDragging || !currentOffset) return null;
+
+    const { x, y } = currentOffset;
+
+    return (
+      <div
+        style={{
+          position: "fixed",
+          pointerEvents: "none",
+          left: 0,
+          top: 0,
+          transform: `translate(${x}px, ${y}px)`,
+          zIndex: 1000,
+        }}
+        className="flex gap-2"
+      >
+        <FolderIcon className="text-purple-400 w-7" /> {name}
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen bg-gray-900 text-white space-y-6 shadow-lg overflow-y-auto z-50 border-2 border-gray-800">
       {currentFolder ? (
@@ -369,6 +407,7 @@ export default function Sidebar({
           ))}
         </ul>
       )}
+      <CustomDragLayer />
     </div>
   );
 }
