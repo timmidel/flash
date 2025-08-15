@@ -1,4 +1,5 @@
 import { supabase } from "../lib/supabaseClient";
+import { Folder } from "../types/folder";
 
 export const createFolder = async ({
   name,
@@ -49,16 +50,10 @@ export const getFolderById = async (id: string) => {
   return data;
 };
 
-export const updateFolder = async ({
-  id,
-  name,
-}: {
-  id: string;
-  name: string;
-}) => {
+export const updateFolder = async (id: string, updates: Partial<Folder>) => {
   const { data, error } = await supabase
     .from("folders")
-    .update({ name })
+    .update(updates)
     .eq("id", id)
     .select()
     .single();

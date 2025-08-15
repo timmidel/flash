@@ -1,24 +1,53 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import {
   createFolder,
   getFoldersByUser,
   deleteFolder,
   getFolderById,
+  updateFolder,
 } from "../services/folderService";
 import toast from "react-hot-toast";
 import KebabMenu from "./KebabMenu";
 import { ChevronLeft, Folder as FolderIcon, File } from "lucide-react";
 import { Folder } from "../types/folder";
 import { Document } from "../types/document";
-import { getDocumentsByUser } from "../services/documentService";
+import {
+  getDocumentsByUser,
+  updateDocument,
+} from "../services/documentService";
+import { useDrag, useDrop } from "react-dnd";
 
 interface SidebarProps {
   userId: string;
   currentFolder: Folder | null;
   setCurrentFolder: (folder: Folder | null) => void;
 }
+interface DroppableFolderProps {
+  folder: Folder;
+  onDropInside: (folder: DraggedFolder | DraggedFile, folderId: string) => void;
+  children?: ReactNode;
+}
+interface DraggableFolderProps {
+  folder: Folder;
+  onClick?: () => void;
+}
+
+interface DraggedFolder {
+  id: string;
+  type: typeof ItemTypes.FOLDER;
+}
+
+interface DraggedFile {
+  id: string;
+  type: typeof ItemTypes.FILE;
+}
+
+const ItemTypes = {
+  FOLDER: "FOLDER",
+  FILE: "FILE",
+};
 
 export default function Sidebar({
   userId,
@@ -34,19 +63,15 @@ export default function Sidebar({
 
   const fetchFolders = async () => {
     try {
-      setSwitchingFolder(true);
       const data = await getFoldersByUser(userId, currentFolder?.id || null);
       setFolders(data);
     } catch (err) {
       console.error("Error fetching folders:", err);
       toast.error("Failed to load folders");
-    } finally {
-      setSwitchingFolder(false);
     }
   };
 
   const fetchDocuments = async () => {
-    setSwitchingFolder(true);
     if (!userId) return;
     try {
       const userDocuments = await getDocumentsByUser(
@@ -57,14 +82,18 @@ export default function Sidebar({
     } catch (error) {
       console.log("Error fetching documents:", error);
       toast.error("Failed to fetch documents.");
-    } finally {
-      setSwitchingFolder(false);
     }
   };
 
+  const fetchData = async () => {
+    setSwitchingFolder(true);
+    await fetchFolders();
+    await fetchDocuments();
+    setSwitchingFolder(false);
+  };
+
   useEffect(() => {
-    fetchFolders();
-    fetchDocuments();
+    fetchData();
   }, [userId, currentFolder]);
 
   const handleCreateFolder = async () => {
@@ -138,18 +167,168 @@ export default function Sidebar({
     toast.success("Delete functionality to be implemented.");
   };
 
+  function DraggableFolder({ folder, onClick }: DraggableFolderProps) {
+    const [{ isDragging }, dragRef] = useDrag(() => ({
+      type: ItemTypes.FOLDER,
+      item: { id: folder.id, type: ItemTypes.FOLDER },
+      collect: (monitor) => ({
+        isDragging: monitor.isDragging(),
+      }),
+    }));
+
+    return (
+      <li
+        ref={dragRef as unknown as React.Ref<HTMLLIElement>}
+        style={{ opacity: isDragging ? 0.5 : 1 }}
+        className="flex justify-between items-center hover:bg-gray-800 px-4 rounded cursor-pointer"
+        onClick={onClick}
+      >
+        <div className="flex gap-3">
+          <FolderIcon className="text-purple-400" />
+          <span>{folder.name}</span>
+        </div>
+        <KebabMenu
+          onDelete={() => handleDeleteFolder(folder.id)}
+          onMove={() => handleMove(folder.id)}
+        />
+      </li>
+    );
+  }
+
+  function DraggableFile({ file }: { file: Document }) {
+    const [{ isDragging }, dragRef] = useDrag(() => ({
+      type: ItemTypes.FILE,
+      item: { id: file.id, type: ItemTypes.FILE },
+      collect: (monitor) => ({
+        isDragging: monitor.isDragging(),
+      }),
+    }));
+
+    return (
+      <li
+        ref={dragRef as unknown as React.Ref<HTMLLIElement>}
+        style={{ opacity: isDragging ? 0.5 : 1 }}
+        className="flex justify-between items-center hover:bg-gray-800 px-4 rounded cursor-pointer"
+      >
+        <div className="flex gap-3">
+          <File className="text-purple-400" />
+          <span>{file.title}</span>
+        </div>
+        <KebabMenu
+          onDelete={() => handleDeleteFile(file.id)}
+          onMove={() => handleMove(file.id)}
+        />
+      </li>
+    );
+  }
+
+  function DroppableFolder({
+    folder,
+    onDropInside,
+    children,
+  }: DroppableFolderProps) {
+    const [{ isOver, canDrop }, dropRef] = useDrop(() => ({
+      accept: [ItemTypes.FOLDER, ItemTypes.FILE],
+      drop: (item) => {
+        onDropInside(item, folder.id);
+      },
+      canDrop: (item: DraggedFile | DraggedFolder) => item.id !== folder.id, // prevent dropping into itself
+      collect: (monitor) => ({
+        isOver: monitor.isOver(),
+        canDrop: monitor.canDrop(),
+      }),
+    }));
+
+    return (
+      <div
+        ref={dropRef as unknown as React.Ref<HTMLDivElement>}
+        className={` rounded ${
+          isOver && canDrop ? "bg-purple-700" : "hover:bg-gray-800"
+        }`}
+      >
+        {children}
+      </div>
+    );
+  }
+
+  function DroppableParentFolder({
+    onDropInside,
+  }: {
+    onDropInside: (
+      folder: DraggedFolder | DraggedFile,
+      folderId: string | null
+    ) => void;
+  }) {
+    const [{ isOver, canDrop }, dropRef] = useDrop(() => ({
+      accept: [ItemTypes.FOLDER, ItemTypes.FILE],
+      drop: (item) => {
+        onDropInside(item, currentFolder?.parent_id || null);
+      },
+      canDrop: (item: DraggedFile | DraggedFolder) =>
+        item.id !== currentFolder?.id, // prevent dropping into itself
+      collect: (monitor) => ({
+        isOver: monitor.isOver(),
+        canDrop: monitor.canDrop(),
+      }),
+    }));
+
+    return (
+      <div
+        className={`flex gap-3 py-5 px-3 ${
+          isOver && canDrop ? "bg-purple-700" : ""
+        }`}
+        ref={dropRef as unknown as React.Ref<HTMLDivElement>}
+      >
+        <span className="cursor-pointer">
+          <ChevronLeft onClick={handleBack} className="mt-0.5" />
+        </span>
+        <h2 className="text-xl font-bold">{currentFolder?.name}</h2>
+      </div>
+    );
+  }
+
+  const handleDropInside = async (
+    item: DraggedFolder | DraggedFile,
+    targetFolderId: string | null
+  ) => {
+    if (item.type === ItemTypes.FOLDER) {
+      // Handle folder drop
+      const folder = folders.find((f) => f.id === item.id);
+      if (!folder) return;
+
+      try {
+        await updateFolder(folder.id, {
+          name: folder.name,
+          parent_id: targetFolderId,
+        });
+        console.log("UPDATED FOLDER" + folder.name, folder.id, targetFolderId);
+        await fetchFolders();
+      } catch (err) {
+        console.error("Error moving folder:", err);
+        toast.error("Failed to move folder");
+      }
+    } else if (item.type === ItemTypes.FILE) {
+      // Handle file drop
+      const document = documents.find((d) => d.id === item.id);
+      if (!document) return;
+      try {
+        await updateDocument(document.id, { folder_id: targetFolderId });
+        await fetchDocuments();
+      } catch (err) {
+        console.error("Error moving file:", err);
+        toast.error("Failed to move file");
+      }
+    }
+    console.log("Dropped item:", item, "into folder:", targetFolderId);
+  };
+
   return (
     <div className="fixed top-0 left-0 h-screen transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300 bg-gray-900 text-white space-y-6 shadow-lg overflow-y-auto z-50 border-2 border-gray-800">
-      <div className="flex gap-3 py-5 px-3">
-        {currentFolder && (
-          <span className="cursor-pointer">
-            <ChevronLeft onClick={handleBack} className="mt-0.5" />
-          </span>
-        )}
-        <h2 className="text-xl font-bold">
-          {currentFolder?.name || "📁 My Vault"}
-        </h2>
-      </div>
+      {currentFolder ? (
+        <DroppableParentFolder onDropInside={handleDropInside} />
+      ) : (
+        <h2 className="text-xl font-bold py-5 px-4 m-0">🗃️ My Vault</h2>
+      )}
       <div className="flex gap-2 px-2">
         <input
           type="text"
@@ -173,37 +352,20 @@ export default function Sidebar({
       {!switchingFolder && (
         <ul className="space-y-2">
           {folders.map((folder) => (
-            <li
+            <DroppableFolder
               key={folder.id}
-              className="flex justify-between items-center hover:bg-gray-800 transition-all px-4 rounded cursor-pointer"
-              onClick={() => handleFolderClick(folder)}
+              folder={folder}
+              onDropInside={handleDropInside}
             >
-              <div className="flex gap-3">
-                <FolderIcon className="text-purple-400" />
-                <span>{folder.name}</span>
-              </div>
-
-              <KebabMenu
-                onDelete={() => handleDeleteFolder(folder.id)}
-                onMove={() => handleMove(folder.id)}
+              <DraggableFolder
+                folder={folder}
+                onClick={() => handleFolderClick(folder)}
               />
-            </li>
+            </DroppableFolder>
           ))}
-          {documents.map((document: Document) => (
-            <li
-              key={document.id}
-              className="flex justify-between items-center hover:bg-gray-800 transition-all px-4 rounded cursor-pointer"
-            >
-              <div className="flex gap-3">
-                <File className="text-purple-400" />
-                <span>{document.title}</span>
-              </div>
 
-              <KebabMenu
-                onDelete={() => handleDeleteFile(document.id)}
-                onMove={() => handleMove(document.id)}
-              />
-            </li>
+          {documents.map((document) => (
+            <DraggableFile key={document.id} file={document} />
           ))}
         </ul>
       )}
