@@ -1,10 +1,11 @@
 "use client";
 
 import React from "react";
+import { createPortal } from "react-dom";
 
 interface ConfirmationModalProps {
   isOpen: boolean;
-  onClose: () => void;
+  onClose: (e: React.MouseEvent<HTMLButtonElement>) => void;
   onConfirm: (e: React.MouseEvent<HTMLButtonElement>) => void;
   title: string;
   message: string;
@@ -31,8 +32,11 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black/80 z-50 flex justify-center items-center">
+  const modalContent = (
+    <div
+      className="fixed inset-0 bg-black/80 z-50 flex justify-center items-center"
+      onClick={(e) => e.stopPropagation()}
+    >
       <div className="bg-gray-800 p-6 rounded-lg shadow-xl">
         <h2 className="text-xl font-bold text-white mb-4">{title}</h2>
         <p className="text-gray-300 mb-6">{message}</p>
@@ -53,6 +57,8 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default ConfirmationModal;

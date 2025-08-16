@@ -314,10 +314,11 @@ export default function Sidebar({
         }`}
         ref={dropRef as unknown as React.Ref<HTMLDivElement>}
       >
-        <span className="cursor-pointer">
-          <ChevronLeft onClick={handleBack} className="mt-0.5" />
-        </span>
-        <h2 className="text-lg font-bold px-2">{currentFolder?.name}</h2>
+        <div className="flex items-center gap-1">
+          <ChevronLeft onClick={handleBack} className="cursor-pointer" />
+          <h2 className="text-lg font-bold px-2">{currentFolder?.name}</h2>
+        </div>
+
         <X className="cursor-pointer" onClick={toggleSidebar} />
       </div>
     );

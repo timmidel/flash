@@ -265,7 +265,10 @@ export default function Home() {
     <Spinner />
   ) : (
     user && (
-      <div className="flex h-screen bg-gray-900 text-gray-200">
+      <div
+        className="flex h-screen bg-gray-900 text-gray-200"
+        id="app-container"
+      >
         <div className="flex-1 flex flex-col ">
           <Navbar
             user={user}

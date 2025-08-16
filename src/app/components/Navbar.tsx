@@ -41,14 +41,18 @@ export default function Navbar({
   // Close sidebar on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      const appContainer = document.getElementById("app-container");
+
       if (
         sidebarRef.current &&
-        !sidebarRef.current.contains(event.target as Node)
+        !sidebarRef.current.contains(target) &&
+        appContainer &&
+        appContainer.contains(target) // ignore clicks inside modal
       ) {
         setIsSidebarOpen(false);
       }
     };
-
     if (isSidebarOpen) {
       document.addEventListener("mousedown", handleClickOutside);
     } else {

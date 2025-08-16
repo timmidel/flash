@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import DeleteConfirmationModal from "./ConfirmationModal";
+import ConfirmationModal from "./ConfirmationModal";
 
 interface KebabMenuProps {
   onDelete: () => void;
@@ -84,10 +84,13 @@ export default function KebabMenu({
           </div>
         </div>
       )}
-      <DeleteConfirmationModal
+      <ConfirmationModal
         title={deleteTitle}
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={(e) => {
+          e?.stopPropagation?.();
+          setIsModalOpen(false);
+        }}
         onConfirm={(e) => {
           e?.stopPropagation?.(); // prevent bubbling to parent <li>
           onDelete();
