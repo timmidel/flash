@@ -1,21 +1,30 @@
 "use client";
 
 import { useState } from "react";
+import DeleteConfirmationModal from "./DeleteConfirmationModal";
 
 interface KebabMenuProps {
   onDelete: () => void;
   onMove: () => void;
+  deleteTitle: string;
+  deleteMessage: string;
 }
 
-export default function KebabMenu({ onDelete, onMove }: KebabMenuProps) {
+export default function KebabMenu({
+  onDelete,
+  onMove,
+  deleteTitle,
+  deleteMessage,
+}: KebabMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
   };
 
   return (
-    <div className="relative inline-block text-left">
+    <div className="relative inline-block text-left w-12">
       <div>
         <button
           type="button"
@@ -30,7 +39,7 @@ export default function KebabMenu({ onDelete, onMove }: KebabMenuProps) {
       </div>
 
       {isOpen && (
-        <div className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-gray-800 ring-1 ring-black ring-opacity-5">
+        <div className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-gray-800 ring-1 ring-black ring-opacity-5 z-50">
           <div
             className="py-1"
             role="menu"
@@ -43,7 +52,7 @@ export default function KebabMenu({ onDelete, onMove }: KebabMenuProps) {
                 onMove();
                 setIsOpen(false);
               }}
-              className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+              className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white cursor-pointer"
               role="menuitem"
             >
               Move
@@ -51,10 +60,10 @@ export default function KebabMenu({ onDelete, onMove }: KebabMenuProps) {
             <button
               onClick={(e) => {
                 e.stopPropagation(); // prevents the click from reaching <li>
-                onDelete();
+                setIsModalOpen(true);
                 setIsOpen(false);
               }}
-              className="block w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-700 hover:text-white"
+              className="block w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-700 hover:text-white cursor-pointer"
               role="menuitem"
             >
               Delete
@@ -62,6 +71,17 @@ export default function KebabMenu({ onDelete, onMove }: KebabMenuProps) {
           </div>
         </div>
       )}
+      <DeleteConfirmationModal
+        title={deleteTitle}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onConfirm={(e) => {
+          e?.stopPropagation?.(); // prevent bubbling to parent <li>
+          onDelete();
+          setIsModalOpen(false);
+        }}
+        message={deleteMessage}
+      />
     </div>
   );
 }

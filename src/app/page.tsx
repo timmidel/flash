@@ -8,8 +8,8 @@ import { supabase } from "./lib/supabaseClient";
 import { User } from "@supabase/supabase-js";
 import {
   createDocument,
-  getDocumentsByUser,
   deleteDocument,
+  getRecentDocumentsByUser,
 } from "./services/documentService";
 import { Trash2 } from "lucide-react";
 import DeleteConfirmationModal from "./components/DeleteConfirmationModal";
@@ -76,11 +76,8 @@ export default function Home() {
   const fetchDocuments = async () => {
     if (!user) return;
     try {
-      const userDocuments = await getDocumentsByUser(
-        user.id,
-        currentFolder?.id || null
-      );
-      setDocuments(userDocuments || []);
+      const recentDocuments = await getRecentDocumentsByUser(user.id);
+      setDocuments(recentDocuments || []);
     } catch (error) {
       console.log("Error fetching documents:", error);
       toast.error("Failed to fetch documents.");
@@ -223,8 +220,8 @@ export default function Home() {
     }
   };
 
-  const handleDocumentClick = (doc: Document) => {
-    setSelectedDocIdForQuiz(doc.id);
+  const handleDocumentClick = (docId: string) => {
+    setSelectedDocIdForQuiz(docId);
     setIsQuizTypeModalOpen(true);
   };
 
@@ -238,6 +235,9 @@ export default function Home() {
             user={user}
             currentFolder={currentFolder}
             setCurrentFolder={setCurrentFolder}
+            newDocuments={documents}
+            fetchRecentDocuments={fetchDocuments}
+            handleDocumentClick={handleDocumentClick}
           />
           <main className="flex-1 p-4 overflow-y-auto">
             <div className="max-w-3xl mx-auto mt-5">
@@ -349,13 +349,13 @@ export default function Home() {
               </div>
               <div className="mt-12">
                 <h2 className="text-2xl font-extrabold text-purple-400 mb-4">
-                  Your Documents
+                  Recent Documents
                 </h2>
                 <ul className="space-y-4">
                   {documents.map((doc) => (
                     <li
                       key={doc.id}
-                      onClick={() => handleDocumentClick(doc)}
+                      onClick={() => handleDocumentClick(doc.id)}
                       className="bg-gray-800 p-4 rounded-lg cursor-pointer flex justify-between items-center transition-transform duration-200 hover:scale-101 hover:bg-gray-700"
                     >
                       <div>
@@ -377,6 +377,7 @@ export default function Home() {
             </div>
             <Toaster position="top-right" />
             <DeleteConfirmationModal
+              title="Delete Document"
               isOpen={isModalOpen}
               onClose={closeModal}
               onConfirm={confirmDelete}

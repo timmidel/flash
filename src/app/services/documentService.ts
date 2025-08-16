@@ -44,6 +44,22 @@ export async function getDocumentsByUser(
   return data;
 }
 
+export async function getRecentDocumentsByUser(userId: string) {
+  const { data, error } = await supabase
+    .from("documents")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(5);
+
+  if (error) {
+    console.error("Error fetching recent documents:", error);
+    throw error;
+  }
+
+  return data;
+}
+
 export async function getDocumentById(id: string) {
   const { data, error } = await supabase
     .from("documents")

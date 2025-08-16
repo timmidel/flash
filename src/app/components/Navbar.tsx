@@ -8,17 +8,24 @@ import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import Sidebar from "./Sidebar";
 import { Folder } from "../types/folder";
+import { Document } from "../types/document";
 
 interface NavbarProps {
   user: User | null | undefined;
   currentFolder: Folder | null;
   setCurrentFolder: (folder: Folder | null) => void;
+  newDocuments: Document[] | [];
+  fetchRecentDocuments: () => Promise<void>;
+  handleDocumentClick: (docId: string) => void;
 }
 
 export default function Navbar({
   user,
   currentFolder,
   setCurrentFolder,
+  newDocuments,
+  fetchRecentDocuments,
+  handleDocumentClick,
 }: NavbarProps) {
   const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -70,6 +77,9 @@ export default function Navbar({
           userId={user.id}
           currentFolder={currentFolder}
           setCurrentFolder={setCurrentFolder}
+          newDocuments={newDocuments}
+          fetchRecentDocuments={fetchRecentDocuments}
+          handleDocumentClick={handleDocumentClick}
         />
       </div>
 

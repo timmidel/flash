@@ -14,6 +14,7 @@ import { ChevronLeft, Folder as FolderIcon, File } from "lucide-react";
 import { Folder } from "../types/folder";
 import { Document } from "../types/document";
 import {
+  deleteDocument,
   getDocumentsByUser,
   updateDocument,
 } from "../services/documentService";
@@ -23,6 +24,9 @@ interface SidebarProps {
   userId: string;
   currentFolder: Folder | null;
   setCurrentFolder: (folder: Folder | null) => void;
+  newDocuments: Document[] | [];
+  fetchRecentDocuments: () => Promise<void>;
+  handleDocumentClick: (docId: string) => void;
 }
 interface DroppableFolderProps {
   folder: Folder;
@@ -53,6 +57,9 @@ export default function Sidebar({
   userId,
   currentFolder,
   setCurrentFolder,
+  newDocuments,
+  fetchRecentDocuments,
+  handleDocumentClick,
 }: SidebarProps) {
   const [folders, setFolders] = useState<Folder[]>([]);
   const [newFolderName, setNewFolderName] = useState("");
@@ -96,6 +103,10 @@ export default function Sidebar({
     fetchData();
   }, [userId, currentFolder]);
 
+  useEffect(() => {
+    fetchDocuments();
+  }, [newDocuments]);
+
   const handleCreateFolder = async () => {
     if (!newFolderName.trim()) return;
 
@@ -128,7 +139,7 @@ export default function Sidebar({
     }
   };
 
-  const handleMove = (id: string) => {
+  const handleMove = async (id: string) => {
     console.log("Move folder:", id);
     toast.success("Move functionality to be implemented.");
   };
@@ -162,9 +173,14 @@ export default function Sidebar({
     }
   };
 
-  const handleDeleteFile = (id: string) => {
-    console.log("Delete file:", id);
-    toast.success("Delete functionality to be implemented.");
+  const handleDeleteFile = async (id: string) => {
+    try {
+      await deleteDocument(id);
+      await fetchDocuments();
+    } catch (err) {
+      console.error("Error deleting document:", err);
+      toast.error("Failed to delete document");
+    }
   };
 
   function DraggableFolder({ folder, onClick }: DraggableFolderProps) {
@@ -180,7 +196,7 @@ export default function Sidebar({
       <li
         ref={dragRef as unknown as React.Ref<HTMLLIElement>}
         style={{ opacity: isDragging ? 0.5 : 1 }}
-        className="flex justify-between items-center hover:bg-gray-800 px-4 rounded cursor-pointer"
+        className="flex justify-between items-center hover:bg-gray-800 pl-4 rounded cursor-pointer"
         onClick={onClick}
       >
         <div className="flex gap-3">
@@ -188,8 +204,16 @@ export default function Sidebar({
           <span>{folder.name}</span>
         </div>
         <KebabMenu
-          onDelete={() => handleDeleteFolder(folder.id)}
-          onMove={() => handleMove(folder.id)}
+          onDelete={async () => {
+            await handleDeleteFolder(folder.id);
+            await fetchRecentDocuments();
+          }}
+          onMove={async () => {
+            await handleMove(folder.id);
+            await fetchRecentDocuments();
+          }}
+          deleteTitle={"Delete Folder"}
+          deleteMessage={`Are you sure you want to delete the folder "${folder.name}"?`}
         />
       </li>
     );
@@ -208,15 +232,24 @@ export default function Sidebar({
       <li
         ref={dragRef as unknown as React.Ref<HTMLLIElement>}
         style={{ opacity: isDragging ? 0.5 : 1 }}
-        className="flex justify-between items-center hover:bg-gray-800 px-4 rounded cursor-pointer"
+        onClick={() => handleDocumentClick(file.id)}
+        className="flex justify-between items-center hover:bg-gray-800 pl-4 rounded cursor-pointer"
       >
         <div className="flex gap-3">
           <File className="text-purple-400" />
           <span>{file.title}</span>
         </div>
         <KebabMenu
-          onDelete={() => handleDeleteFile(file.id)}
-          onMove={() => handleMove(file.id)}
+          onDelete={async () => {
+            await handleDeleteFile(file.id);
+            await fetchRecentDocuments();
+          }}
+          onMove={async () => {
+            await handleMove(file.id);
+            await fetchRecentDocuments();
+          }}
+          deleteTitle={"Delete Document"}
+          deleteMessage={`Are you sure you want to delete the document "${file.title}"?`}
         />
       </li>
     );
@@ -274,7 +307,7 @@ export default function Sidebar({
 
     return (
       <div
-        className={`flex gap-3 py-5 px-3 ${
+        className={`flex gap-3 py-5 px-3 mb-2 ${
           isOver && canDrop ? "bg-purple-700" : ""
         }`}
         ref={dropRef as unknown as React.Ref<HTMLDivElement>}
@@ -365,13 +398,14 @@ export default function Sidebar({
       {currentFolder ? (
         <DroppableParentFolder onDropInside={handleDropInside} />
       ) : (
-        <h2 className="text-xl font-bold py-5 px-4 m-0">🗃️ My Vault</h2>
+        <h2 className="text-xl font-bold py-5 px-4 mb-2">🗃️ My Vault</h2>
       )}
       <div className="flex gap-2 px-2">
         <input
           type="text"
           value={newFolderName}
           onChange={(e) => setNewFolderName(e.target.value)}
+          maxLength={30}
           placeholder="New folder name"
           className="flex-1 px-2 py-1 rounded bg-gray-800 text-white border border-gray-700"
         />
