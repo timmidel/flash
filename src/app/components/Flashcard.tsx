@@ -59,13 +59,21 @@ export default function FlashcardComponent({
           </p>
           {showRationale &&
             (flashcard.rationaleImage ? (
-              <img
-                src={flashcard.rationaleImage}
-                alt="Rationale"
-                className="mt-2 max-w-full h-auto rounded-lg"
-              />
+              <div>
+                <p className="text-sm text-gray-400 font-semibold mt-5 mb-2">
+                  Rationale:
+                </p>
+                <img
+                  src={flashcard.rationaleImage}
+                  alt="Rationale"
+                  className="mt-2 max-w-full h-auto rounded-lg"
+                />
+              </div>
             ) : flashcard.rationale ? (
-              <p className="text-sm text-gray-400">{flashcard.rationale}</p>
+              <div className="w-full text-sm text-gray-400 border-t border-gray-700 pt-2">
+                <p className="font-semibold">Rationale:</p>
+                <p>{flashcard.rationale}</p>
+              </div>
             ) : null)}
         </div>
       </div>

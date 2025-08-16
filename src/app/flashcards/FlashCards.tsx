@@ -2,7 +2,7 @@
 
 import { useContext, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { Shuffle, Eye, EyeOff } from "lucide-react";
+import { Shuffle, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { FlashcardContext, Flashcard } from "../context/FlashcardContext";
 import FlashcardComponent from "../components/Flashcard";
 import { getDocumentById } from "../services/documentService";
@@ -10,6 +10,7 @@ import { getRationaleImageByDocument } from "../services/rationaleImageService";
 import Spinner from "../components/Spinner";
 import { getQuestionsByDocument } from "../services/questionService";
 import { Question } from "../types/item";
+import { useRouter } from "next/navigation";
 
 export default function Flashcards() {
   const context = useContext(FlashcardContext);
@@ -22,6 +23,8 @@ export default function Flashcards() {
   const docId = searchParams.get("docId");
   const flag = searchParams.get("flag");
   const rationaleFlag = searchParams.get("rationaleFlag");
+
+  const router = useRouter();
 
   useEffect(() => {
     const fetchAndBuildFlashcards = async () => {
@@ -137,26 +140,35 @@ export default function Flashcards() {
           showRationale={showRationale}
         />
       </div>
-      <div className="fixed top-4 right-4 flex space-x-2">
-        <button
-          onClick={handleShuffle}
-          className="px-4 py-2 text-white rounded-md cursor-pointer hover:scale-125 transition-all focus:outline-none focus:ring-0"
-        >
-          <Shuffle className="w-9 h-9" />
-        </button>
-        {(flashcards[currentIndex]?.rationale ||
-          flashcards[currentIndex]?.rationaleImage) && (
+      <div className="fixed top-0 right-0 p-2 flex justify-between px-4 bg-gray-900/90 w-full">
+        <div className="flex items-center">
+          <ArrowLeft
+            onClick={() => router.push("/")}
+            className="cursor-pointer"
+          />
+        </div>
+
+        <div className="flex items-center">
           <button
-            onClick={() => setShowRationale(!showRationale)}
+            onClick={handleShuffle}
             className="px-4 py-2 text-white rounded-md cursor-pointer hover:scale-125 transition-all focus:outline-none focus:ring-0"
           >
-            {showRationale ? (
-              <Eye className="w-9 h-9" />
-            ) : (
-              <EyeOff className="w-9 h-9" />
-            )}
+            <Shuffle className="w-7 h-7" />
           </button>
-        )}
+          {(flashcards[currentIndex]?.rationale ||
+            flashcards[currentIndex]?.rationaleImage) && (
+            <button
+              onClick={() => setShowRationale(!showRationale)}
+              className="px-4 py-2 text-white rounded-md cursor-pointer hover:scale-125 transition-all focus:outline-none focus:ring-0"
+            >
+              {showRationale ? (
+                <Eye className="w-7 h-7" />
+              ) : (
+                <EyeOff className="w-7 h-7" />
+              )}
+            </button>
+          )}
+        </div>
       </div>
       <div className="bg-gray-900/90 fixed bottom-0 left-0 right-0 p-4 flex items-center justify-center space-x-4">
         <button

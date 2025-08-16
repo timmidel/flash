@@ -10,7 +10,7 @@ import {
 } from "../services/folderService";
 import toast from "react-hot-toast";
 import KebabMenu from "./KebabMenu";
-import { ChevronLeft, Folder as FolderIcon, File } from "lucide-react";
+import { ChevronLeft, Folder as FolderIcon, File, X } from "lucide-react";
 import { Folder } from "../types/folder";
 import { Document } from "../types/document";
 import {
@@ -27,6 +27,7 @@ interface SidebarProps {
   newDocuments: Document[] | [];
   fetchRecentDocuments: () => Promise<void>;
   handleDocumentClick: (docId: string) => void;
+  toggleSidebar: () => void;
 }
 interface DroppableFolderProps {
   folder: Folder;
@@ -60,6 +61,7 @@ export default function Sidebar({
   newDocuments,
   fetchRecentDocuments,
   handleDocumentClick,
+  toggleSidebar,
 }: SidebarProps) {
   const [folders, setFolders] = useState<Folder[]>([]);
   const [newFolderName, setNewFolderName] = useState("");
@@ -199,7 +201,7 @@ export default function Sidebar({
         className="flex justify-between items-center hover:bg-gray-800 pl-4 rounded cursor-pointer"
         onClick={onClick}
       >
-        <div className="flex gap-3">
+        <div className="flex justify-center items-center gap-3">
           <FolderIcon className="text-purple-400" />
           <span>{folder.name}</span>
         </div>
@@ -235,7 +237,7 @@ export default function Sidebar({
         onClick={() => handleDocumentClick(file.id)}
         className="flex justify-between items-center hover:bg-gray-800 pl-4 rounded cursor-pointer"
       >
-        <div className="flex gap-3">
+        <div className="flex justify-center items-center gap-3">
           <File className="text-purple-400" />
           <span>{file.title}</span>
         </div>
@@ -307,7 +309,7 @@ export default function Sidebar({
 
     return (
       <div
-        className={`flex gap-3 py-5 px-3 mb-2 ${
+        className={`flex py-5 px-4 mb-2 items-center justify-between ${
           isOver && canDrop ? "bg-purple-700" : ""
         }`}
         ref={dropRef as unknown as React.Ref<HTMLDivElement>}
@@ -315,7 +317,8 @@ export default function Sidebar({
         <span className="cursor-pointer">
           <ChevronLeft onClick={handleBack} className="mt-0.5" />
         </span>
-        <h2 className="text-xl font-bold">{currentFolder?.name}</h2>
+        <h2 className="text-lg font-bold px-2">{currentFolder?.name}</h2>
+        <X className="cursor-pointer" onClick={toggleSidebar} />
       </div>
     );
   }
@@ -392,13 +395,15 @@ export default function Sidebar({
       </div>
     );
   }
-
   return (
-    <div className="h-screen bg-gray-900 text-white space-y-6 shadow-lg overflow-y-auto z-50 border-2 border-gray-800">
+    <div className="h-screen bg-gray-900 text-white space-y-6 shadow-lg overflow-y-auto z-50 border-2 border-gray-800 max-w-[320px]">
       {currentFolder ? (
         <DroppableParentFolder onDropInside={handleDropInside} />
       ) : (
-        <h2 className="text-xl font-bold py-5 px-4 mb-2">🗃️ My Vault</h2>
+        <div className="flex py-5 px-4 mb-2 items-center justify-between">
+          <h2 className="text-xl font-bold">🗃️ My Vault</h2>
+          <X className="cursor-pointer" onClick={toggleSidebar} />
+        </div>
       )}
       <div className="flex gap-2 px-2">
         <input
@@ -414,8 +419,8 @@ export default function Sidebar({
           disabled={loading}
           className={
             loading
-              ? "bg-gray-700 text-gray-300 px-3 py-1 rounded text-sm cursor-pointer w-full"
-              : " bg-purple-600 hover:bg-purple-700 px-3 py-1 rounded text-sm cursor-pointer w-full"
+              ? "bg-gray-700 text-gray-300 px-3 py-1 rounded text-sm cursor-pointer w-20"
+              : " bg-purple-600 hover:bg-purple-700 px-3 py-1 rounded text-sm cursor-pointer w-20"
           }
         >
           Add

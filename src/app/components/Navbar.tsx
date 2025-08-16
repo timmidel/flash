@@ -80,6 +80,7 @@ export default function Navbar({
           newDocuments={newDocuments}
           fetchRecentDocuments={fetchRecentDocuments}
           handleDocumentClick={handleDocumentClick}
+          toggleSidebar={toggleSidebar}
         />
       </div>
 
