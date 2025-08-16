@@ -1,6 +1,7 @@
 import { supabase } from "../lib/supabaseClient";
 import mammoth from "mammoth";
 import * as cheerio from "cheerio";
+import imageCompression from "browser-image-compression";
 
 type RationaleImage = {
   id?: string;
@@ -66,29 +67,47 @@ async function uploadRationaleImage(
     return { success: false, error: "User not authenticated" };
   }
 
+  const compressedFile = await compressImage(file);
   const filePath = generateFileName(documentId, rationaleIndex);
 
-  const { data, error } = await supabase.storage
-    .from("rationale-images")
-    .upload(filePath, file, {
-      cacheControl: "3600",
-      contentType: file.type,
-    });
+  if (compressedFile) {
+    const { data, error } = await supabase.storage
+      .from("rationale-images")
+      .upload(filePath, compressedFile, {
+        cacheControl: "3600",
+        contentType: file.type,
+      });
+    console.log("Upload response:", { data, error });
 
-  console.log("Upload response:", { data, error });
+    if (error) {
+      return { success: false, error: error.message };
+    }
 
-  if (error) {
-    return { success: false, error: error.message };
+    const { data: publicUrlData } = supabase.storage
+      .from("rationale-images")
+      .getPublicUrl(filePath);
+
+    return {
+      success: true,
+      url: publicUrlData.publicUrl,
+    };
+  } else {
+    return { success: false, error: "Image compression failed" };
   }
-
-  const { data: publicUrlData } = supabase.storage
-    .from("rationale-images")
-    .getPublicUrl(filePath);
-
-  return {
-    success: true,
-    url: publicUrlData.publicUrl,
+}
+async function compressImage(file: File) {
+  const options = {
+    maxSizeMB: 1, // target < 1MB
+    maxWidthOrHeight: 1024,
+    useWebWorker: true,
   };
+
+  try {
+    const compressedFile = await imageCompression(file, options);
+    return compressedFile; // Use this for upload
+  } catch (error) {
+    console.error("Compression error:", error);
+  }
 }
 
 export async function extractImages(
