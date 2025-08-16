@@ -23,6 +23,7 @@ import { Folder } from "./types/folder";
 import { Document } from "./types/document";
 import Navbar from "./components/Navbar";
 import ConfirmationModal from "./components/ConfirmationModal";
+import LoadingOverlay from "./components/LoadingOverlay";
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
@@ -149,6 +150,7 @@ export default function Home() {
     documentId: string,
     rationaleImageIndices: number[]
   ) => {
+    setGenerating(true);
     const res = await fetch("/api/generate-rationale", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -160,6 +162,7 @@ export default function Home() {
     } else {
       toast.error(data.message);
     }
+    setGenerating(false);
   };
 
   const saveDocument = async (content: string, arrayBuffer: ArrayBuffer) => {
@@ -415,6 +418,7 @@ export default function Home() {
               </div>
             </div>
             <Toaster position="top-right" />
+            <LoadingOverlay isLoading={generating} message="Generating..." />
             <ConfirmationModal
               title="Delete Document"
               isOpen={isModalOpen}
