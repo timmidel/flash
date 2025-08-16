@@ -12,7 +12,6 @@ import {
   getRecentDocumentsByUser,
 } from "./services/documentService";
 import { Trash2 } from "lucide-react";
-import DeleteConfirmationModal from "./components/DeleteConfirmationModal";
 import QuizTypeSelectionModal from "./components/QuizTypeSelectionModal";
 import {
   createRationaleImage,
@@ -23,6 +22,7 @@ import { preprocessHtml, saveItemData } from "./services/extractorService";
 import { Folder } from "./types/folder";
 import { Document } from "./types/document";
 import Navbar from "./components/Navbar";
+import ConfirmationModal from "./components/ConfirmationModal";
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
@@ -37,6 +37,11 @@ export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<string | null>(null);
   const [isQuizTypeModalOpen, setIsQuizTypeModalOpen] = useState(false);
+  const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
+  const [generateModalData, setGenerateModalData] = useState<{
+    documentId: string;
+    rationaleImageIndices: number[];
+  } | null>(null);
   const [selectedDocIdForQuiz, setSelectedDocIdForQuiz] = useState<
     string | null
   >(null);
@@ -140,6 +145,23 @@ export default function Home() {
     setFlag(e.target.value);
   };
 
+  const generateRationale = async (
+    documentId: string,
+    rationaleImageIndices: number[]
+  ) => {
+    const res = await fetch("/api/generate-rationale", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ documentId, rationaleImageIndices }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      toast.success(data.message);
+    } else {
+      toast.error(data.message);
+    }
+  };
+
   const saveDocument = async (content: string, arrayBuffer: ArrayBuffer) => {
     try {
       const newDoc = await createDocument({
@@ -150,7 +172,6 @@ export default function Home() {
         folder_id: currentFolder?.id || null,
         user_id: user?.id,
       });
-      console.log("Created:", newDoc);
       const extractedImages = await extractImages(arrayBuffer, rationaleFlag);
       if (extractedImages.length > 0) {
         for (const { file, rationaleIndex } of extractedImages) {
@@ -169,7 +190,22 @@ export default function Home() {
         }
       }
       if (newDoc) {
-        await saveItemData(newDoc.id, content, flag, rationaleFlag);
+        const { questionCount, rationaleCount } = await saveItemData(
+          newDoc.id,
+          content,
+          flag,
+          rationaleFlag
+        );
+        if (rationaleCount + extractedImages.length < questionCount) {
+          const rationaleImageIndices = extractedImages.map(
+            (img) => img.rationaleIndex
+          );
+          setGenerateModalData({
+            documentId: newDoc.id,
+            rationaleImageIndices,
+          });
+          setIsGenerateModalOpen(true);
+        }
         toast.success("Document saved successfully.");
         setFile(null);
         await fetchDocuments();
@@ -376,12 +412,28 @@ export default function Home() {
               </div>
             </div>
             <Toaster position="top-right" />
-            <DeleteConfirmationModal
+            <ConfirmationModal
               title="Delete Document"
               isOpen={isModalOpen}
               onClose={closeModal}
               onConfirm={confirmDelete}
               message="Are you sure you want to delete this document?"
+            />
+            <ConfirmationModal
+              title="Incomplete Rationale"
+              isOpen={isGenerateModalOpen}
+              onClose={() => setIsGenerateModalOpen(false)}
+              onConfirm={() => {
+                if (generateModalData) {
+                  generateRationale(
+                    generateModalData.documentId,
+                    generateModalData.rationaleImageIndices
+                  );
+                }
+                setIsGenerateModalOpen(false);
+              }}
+              message={`Some questions do not have a rationale. Do you want to auto-generate them?`}
+              confirmColor="purple"
             />
             <QuizTypeSelectionModal
               isOpen={isQuizTypeModalOpen}

@@ -61,7 +61,6 @@ export default function MultipleChoice() {
             ).length;
             setScore(correctCount);
             setAnswersCount(answeredCount);
-            console.log("New Flashcards:", newFlashcards);
             context.setFlashcards(newFlashcards);
           }
         } catch (error) {

@@ -61,13 +61,30 @@ export async function updateQuestions(
   const { data, error } = await supabase
     .from("questions")
     .update(updates)
-    .in("id", ids)
+    .eq("id", ids)
     .select();
 
   if (error) throw error;
   return data;
 }
 
+export async function bulkUpdateQuestions(
+  updates: { id: string; data: Partial<Question> }[]
+) {
+  const results = [];
+  for (const { id, data } of updates) {
+    const { data: updated, error } = await supabase
+      .from("questions")
+      .update(data)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    results.push(updated);
+  }
+  return results;
+}
 // Delete a question
 export async function deleteQuestion(id: string) {
   const { error } = await supabase.from("questions").delete().eq("id", id);

@@ -59,6 +59,8 @@ export async function saveItemData(
   answerFlag: string,
   rationaleFlag: string
 ) {
+  let rationaleCount = 0;
+  let questionCount = 0;
   const lines = content.split("\n");
   let currentQuestion = "";
   let choices: Omit<Choice, "id">[] = [];
@@ -87,7 +89,7 @@ export async function saveItemData(
             answer,
           });
 
-          console.log("Created question:", newQuestion);
+          questionCount++;
           lastQuestionId = newQuestion.id;
 
           const choicesWithQuestionId = choices.map((choice) => ({
@@ -95,8 +97,7 @@ export async function saveItemData(
             question_id: newQuestion.id,
           }));
 
-          const newChoices = await createChoices(choicesWithQuestionId);
-          console.log("Created choices:", newChoices);
+          await createChoices(choicesWithQuestionId);
         }
 
         // Reset for the next question
@@ -107,13 +108,14 @@ export async function saveItemData(
         const rationale = parts[1]?.trim();
 
         if (lastQuestionId && rationale) {
+          rationaleCount++;
           await updateQuestions([lastQuestionId], { rationale });
-          console.log("Updated question rationale");
         }
       } else if (trimmedLine) {
         currentQuestion += trimmedLine + "\n\n";
       }
     }
+    return { rationaleCount, questionCount };
   } catch (error) {
     console.error("Error processing item data:", error);
     throw error;

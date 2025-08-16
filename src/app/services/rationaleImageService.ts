@@ -71,13 +71,12 @@ async function uploadRationaleImage(
   const filePath = generateFileName(documentId, rationaleIndex);
 
   if (compressedFile) {
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from("rationale-images")
       .upload(filePath, compressedFile, {
         cacheControl: "3600",
         contentType: file.type,
       });
-    console.log("Upload response:", { data, error });
 
     if (error) {
       return { success: false, error: error.message };
@@ -216,10 +215,6 @@ export async function deleteImageFolder(bucket: string, folderPath: string) {
         .remove(filePaths);
 
       if (deleteError) throw deleteError;
-
-      console.log(
-        `Deleted ${filePaths.length} files from folder "${folderPath}"`
-      );
     }
   } catch (err) {
     console.error("Failed to delete folder:", err);
